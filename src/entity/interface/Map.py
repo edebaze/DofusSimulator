@@ -29,7 +29,7 @@ class Map:
             b = 0
             while b < NUM_BOX_HEIGHT:
                 al1 = al[b]
-                can.create_rectangle(al1[0], al1[1], al1[2], al1[3], fill='grey')
+                can.create_rectangle(al1[0], al1[1], al1[2], al1[3], fill='grey', outline='black')
                 b += 2
             a += 2
 
@@ -40,7 +40,7 @@ class Map:
             b = 1
             while b < NUM_BOX_HEIGHT:
                 al1 = al[b]
-                can.create_rectangle(al1[0], al1[+1], al1[2], al1[3], fill='grey')
+                can.create_rectangle(al1[0], al1[+1], al1[2], al1[3], fill='grey', outline='black')
                 b = b + 2
             a = a + 2
 

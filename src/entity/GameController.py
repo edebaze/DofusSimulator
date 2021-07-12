@@ -61,8 +61,6 @@ class GameController:
             else:
                 player.deactivate()
 
-        print('Player:', current_player.index)
-
 # ======================================================================================================================
     # KEY BINDING
     def set_key_bindings(self):
