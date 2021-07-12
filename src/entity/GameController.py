@@ -7,16 +7,15 @@ import random
 
 class GameController:
     def __init__(self):
-        global players
+        self.map: (None, Map) = Map()
 
-        self.map = Map()
-
+# ======================================================================================================================
+    # INIT METHODS
+    def start(self):
         self.map.create()
         self.create_players()
         self.set_key_bindings()
 
-# ======================================================================================================================
-    # INIT METHODS
     @staticmethod
     def create_players():
         global current_player

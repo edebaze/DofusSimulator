@@ -8,16 +8,17 @@ import time
 
 class Player:
     def __init__(self, index: int, class_name: str):
-        self.index: int  = index
-        self.name: str  = ''
+        self.index: int = index
+        self.name: str = ''
         self.class_: Class = ClassList.get(class_name)
 
-        # player image
+        # Canvas items
         self.tk_img = None                      # image of the player (PhotoImage object)
         self.label: (None, Label) = None        # label of the image in Canvas
         self.mask_pm: list = []                 # mask for pm (constraining all ids of rect)
         self.mask_po: list = []                 # mask for po (constraining all ids of rect)
 
+        # Stats
         self.BASE_HP = 100          # initial HP of the player
         self.BASE_PA = 7            # initial PA of the player
         self.BASE_PM = 3            # initial PM of the player
@@ -26,6 +27,9 @@ class Player:
         self.pa = self.BASE_PA      # current PA of the player
         self.pm = self.BASE_PM      # current PM of the player
         self.po = self.BASE_PO      # current PO of the player
+
+        # Other
+        self.is_dead: bool = False
 
         self.selected_spell: (None, Spell) = None       # current selected spell
 
@@ -239,17 +243,43 @@ class Player:
         # CHECK IF PLAYER IS HIT
         for player in players:
             if player.box_x == box_x_selected and player.box_y == box_y_selected:
-                damages = self.selected_spell.damages()
-                player.hp -= damages
-                print(self.selected_spell.name, ':', damages, 'hp')
-
-                # -- if self hit, display new hp
-                if player.index == self.index:
-                    info_bar.set_hp(self.hp)
+                self.hit(player)
 
         self.pa -= self.selected_spell.pa   # use PA
         info_bar.set_pa(self.pa)            # display use of PA in the info bar
         self.deselect_spell()
+
+    # __________________________________________________________________________________________________________________
+    def hit(self, player):
+        """
+            current player is hitting an other player with current selected spell
+        :param player:
+        :return:
+        """
+        damages = self.selected_spell.damages()
+        player.get_hit(damages)
+        print(self.selected_spell.name, ':', damages, 'hp')
+
+        # -- if self hit, display new hp
+        if player.index == self.index:
+            info_bar.set_hp(self.hp)
+
+    # __________________________________________________________________________________________________________________
+    def get_hit(self, damages: int):
+        """
+            get hit with some damages
+        :param damages:
+        :return:
+        """
+        self.hp -= damages
+
+        if self.hp <= 0:
+            self.die()
+
+    # __________________________________________________________________________________________________________________
+    def die(self):
+        self.is_dead = True
+        end_game(players)
 
 # ======================================================================================================================
     # INFO BAR

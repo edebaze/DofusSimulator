@@ -30,6 +30,18 @@ def get_selected_box(event):
     return x, y
 
 
-def create_circle(x, y, r, coul='red'):                     # pour le dessin des pions
-    "tracé d'un cercle de centre (x,y) et de rayon r"
-    return can.create_oval(x - r, y - r, x + r, y + r, fill=coul)
+def end_game(players):
+    player = None
+    for player in players:
+        if not player.is_dead:
+            break
+
+    popup = Toplevel()
+    popup.title('game over')
+
+    text = f"GAME OVER ! \n PLAYER {player.index} WON"
+    end_label = Label(popup, text=text, bg="black", fg="white", width=20, height=10)
+    end_label.config(font=("Courier", 32, "italic"))
+    end_label.pack()
+
+    Button(popup, text='Quitter', command=root.destroy).pack(padx=10, pady=10)

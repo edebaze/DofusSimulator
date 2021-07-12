@@ -2,13 +2,25 @@ from entity.spells import Spell
 
 
 class SpellList:
+    OS = 0
     CAC = 1
     PRESSION = 2
     FLECHE_MAGIQUE = 3
 
     @staticmethod
     def get(spell_type) -> (None, Spell):
-        if spell_type == SpellList.CAC:
+        if spell_type == SpellList.OS:
+            spell = Spell()
+            spell.name = 'os'
+            spell.type = spell_type
+            spell.img = Spell.IMG_DIR + '/os.jpeg'
+            spell.pa = 0
+            spell.po = 100
+            spell.max_damage = 99999
+            spell.min_damage = 99999
+            spell.is_po_mutable = True
+
+        elif spell_type == SpellList.CAC:
             spell = Spell()
             spell.name = 'cac'
             spell.type = spell_type
@@ -37,8 +49,8 @@ class SpellList:
             spell.img = Spell.IMG_DIR + '/fleche_magique.jpg'
             spell.pa = 4
             spell.po = 7
-            spell.max_damage = 15
-            spell.min_damage = 12
+            spell.max_damage = 18
+            spell.min_damage = 14
 
         else:
             print('Unknown spell', spell_type)
