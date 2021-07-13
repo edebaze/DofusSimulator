@@ -1,8 +1,7 @@
-from globals import *
-from entity import game_controller
+from entity.GameController import GameController
 
 
 if __name__ == '__main__':
-    game_controller.start()
-
-    root.mainloop()
+    game_controller = GameController()
+    state, reward, done = game_controller.reset()
+    game_controller.render()
