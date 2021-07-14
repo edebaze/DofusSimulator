@@ -11,10 +11,12 @@ import numpy as np
 
 class Player:
     def __init__(self, index: int, class_name: str, item_value: int, agent: (None, Agent) = None):
-        self.index: int = index
-        self.name: str = ''
-        self.class_: Class = ClassList.get(class_name)
+        # Identity
         self.agent = agent
+        self.class_: Class = ClassList.get(class_name)
+        self.index: int = index
+        self.team: int = 0
+        self.name: str = ''
 
         # MAP position
         self.box_x: int = 0
@@ -58,11 +60,16 @@ class Player:
         self.label = Label(canvas, image=self.tk_img)
         self.label.place(x=self.x, y=self.y, anchor=NW)
 
+    def round_starts(self):
+        self.reset()
+        self.past_turn_lost_hp = self.turn_lost_hp
+        self.turn_lost_hp = 0
+
     def activate(self):
         """
             activate player bindings when his round starts
         """
-        self.reset()                    # reset PA/PM
+        self.round_starts()
 
         if self.render_mode_active:
             self.add_info()                 # display player info to the info_bar
@@ -74,6 +81,7 @@ class Player:
         """
             deactivate player when his turn ends
         """
+        self.round_starts()
         self.deselect_spell()
 
         if self.render_mode_active:
@@ -137,7 +145,6 @@ class Player:
             print('NOT ENOUGH PM')
             return
 
-        self.label.place(x=box_x_selected * MAP.BOX_DIM, y=box_y_selected * MAP.BOX_DIM)
         self.box_x = box_x_selected
         self.box_y = box_y_selected
         self.move(pm_used)
@@ -145,8 +152,11 @@ class Player:
     # __________________________________________________________________________________________________________________
     def move(self, pm_used=1):
         self.pm -= pm_used
-        INFO_BAR.set_pm(self.pm)
         self.place()
+
+        if self.render_mode_active:
+            INFO_BAR.set_pm(self.pm)
+            self.label.place(x=self.box_x * MAP.BOX_DIM, y=self.box_y * MAP.BOX_DIM)
 
     # __________________________________________________________________________________________________________________
     def move_left(self, event=None):
@@ -158,7 +168,6 @@ class Player:
             print('BOX NOT EMPTY')
             return
 
-        self.label.place(x=box_x*MAP.BOX_DIM)
         self.box_x = box_x
         self.move()
 
@@ -172,7 +181,6 @@ class Player:
             print('BOX NOT EMPTY')
             return
 
-        self.label.place(x=box_x * MAP.BOX_DIM)
         self.box_x = box_x
         self.move()
 
@@ -186,7 +194,6 @@ class Player:
             print('BOX NOT EMPTY')
             return
 
-        self.label.place(y=box_y * MAP.BOX_DIM)
         self.box_y = box_y
         self.move()
 
@@ -199,10 +206,11 @@ class Player:
         if not MAP.is_empty(box_y, self.box_y):
             print('BOX NOT EMPTY')
             return
-
-        self.label.place(y=box_y * MAP.BOX_DIM)
         self.box_y = box_y
         self.move()
+
+        if self.render_mode_active:
+            self.label.place(y=box_y * MAP.BOX_DIM)
 
 # ======================================================================================================================
     # ACTIONS
@@ -210,6 +218,9 @@ class Player:
         """ select a spell and cast it. If player is in range attack him otherwise cast in the void """
         spell = self.class_.spells[-1]
         self.select_spell(spell.type)
+        if self.selected_spell is None:
+            return
+
         po = spell.po + int(spell.is_po_mutable) * self.po
 
         # =================================================================================
@@ -227,8 +238,10 @@ class Player:
                 print(spell.name, 'cast on nothing')
 
         self.pa -= self.selected_spell.pa   # use PA
-        INFO_BAR.set_pa(self.pa)            # display use of PA in the info bar
         self.deselect_spell()
+
+        if self.render_mode_active:
+            INFO_BAR.set_pa(self.pa)  # display use of PA in the info bar
 
     # __________________________________________________________________________________________________________________
     def select_spell(self, spell_type: int):
@@ -323,8 +336,10 @@ class Player:
             print('HIT EMPTY CASE')
 
         self.pa -= self.selected_spell.pa   # use PA
-        INFO_BAR.set_pa(self.pa)            # display use of PA in the info bar
         self.deselect_spell()
+
+        if self.render_mode_active:
+            INFO_BAR.set_pa(self.pa)  # display use of PA in the info bar
 
     # __________________________________________________________________________________________________________________
     def hit(self, player):
@@ -474,6 +489,14 @@ class Player:
 # ======================================================================================================================
     # UTILITY
     def place(self):
+        # -- get previous position of the item
+        pos = np.argwhere(MAP.matrix == self.item_value)
+        if len(pos) != 0:
+            # -- delete the item
+            pos = pos[0]
+            MAP.matrix[pos[0], pos[1]] = MapItemList.EMPTY
+
+        # -- place the item
         MAP.place(self.box_x, self.box_y, self.item_value)
 
 

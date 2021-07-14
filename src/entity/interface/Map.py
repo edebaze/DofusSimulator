@@ -32,7 +32,7 @@ class Map:
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        ])
+        ], dtype=np.int32)
 
         self.BOX_WIDTH = len(self.matrix[0])
         self.BOX_HEIGHT = len(self.matrix)

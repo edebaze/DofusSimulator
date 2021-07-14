@@ -11,16 +11,17 @@ import pdb
 
 
 class GameController:
-    def __init__(self):
+    def __init__(self, ia_players: list = []):
+        self.ia_players: list = ia_players
         self.actions: list = ActionList.get_actions()
         self.n_actions: int = len(self.actions)
 
 # ======================================================================================================================
     # ENV METHODS
     def reset(self):
-        self.create_players()
+        self.create_players(self.ia_players)
 
-        return self.get_state(), self.get_reward(), self.get_done()
+        return self.get_state(), 0, False
 
     def step(self, action):
         continue_playing = CURRENT_PLAYER.do(action)
@@ -76,18 +77,23 @@ class GameController:
         return reward
 
     @staticmethod
-    def create_players():
+    def create_players(ia_players):
         # -- create first player
         box_x = random.randint(1, MAP.BOX_WIDTH - 2)
         box_y = random.randint(MAP.BOX_HEIGHT - 1 - 3, MAP.BOX_HEIGHT - 2)
-        player = Player(0, ClassList.IOP, item_value=MapItemList.PLAYER_1)
+        player = Player(0, ClassList.IOP, item_value=MapItemList.PLAYER_1, agent=ia_players[0])
+        player.name = 'Player 1'
+        player.team = 1
         player.create((box_x, box_y))
         PLAYERS.append(player)
 
         # -- create second player
         box_x = random.randint(1, MAP.BOX_WIDTH - 2)
         box_y = random.randint(1, 4)
-        player = Player(1, ClassList.CRA, item_value=MapItemList.PLAYER_2, agent=Agent())
+        player = Player(1, ClassList.CRA, item_value=MapItemList.PLAYER_2, agent=ia_players[0])
+        player.name = 'Player 2'
+        player.team = 2
+        player.po = 6
         player.create((box_x, box_y))
         PLAYERS.append(player)
 
