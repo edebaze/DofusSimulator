@@ -1,4 +1,4 @@
-from entity.GameController import GameController
+from entity.Engine import Engine
 from agents import Agent
 
 import pdb
@@ -123,7 +123,7 @@ def train_model(model, training_data, training_labels):
 if __name__ == '__main__':
     tf.compat.v1.disable_eager_execution()
 
-    env = GameController([None, None])
+    env = Engine([None, None])
     n_actions = env.n_actions
 
     # -- FIRST TRAINING

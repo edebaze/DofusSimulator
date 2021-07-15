@@ -21,7 +21,7 @@ class Agent:
     EPSILON = 1                 # percentage of chances to take a random action
     EPSILON_DECAY = 0.999       # decrease of epsilon at each predictions
     EPSILON_END = 1e-2          # min value of epsilon
-    EPSILON_RESET = 20000       # reset epsilon each n predictions
+    EPSILON_RESET = 10000       # reset epsilon each n predictions
     EPSILON_RESET_VALUE = 0.2   # value of espilon when epsilon is reset
 
     def __init__(self, actions, input_dim, batch_size=BATCH_SIZE, gamma=GAMMA, epsilon=EPSILON, epsilon_decay=EPSILON_DECAY,
@@ -53,8 +53,14 @@ class Agent:
             Create prediction model
         """
         inputs = Input(self.input_dim)
-        x = Dense(128, activation='relu')(inputs)
-        x = Dense(256, activation='relu')(x)
+
+        x = Dense(1024, activation='relu')(inputs)
+        x = Dense(1024, activation='relu')(x)
+        x = Dense(512, activation='relu')(x)
+        x = Dense(512, activation='relu')(x)
+        x = Dense(128, activation='relu')(x)
+        x = Dense(128, activation='relu')(x)
+
         outputs = Dense(self.n_actions, activation=None)(x)
 
         model = Model(inputs, outputs, name="DQN model")

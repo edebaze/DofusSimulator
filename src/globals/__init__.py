@@ -3,12 +3,13 @@ from entity.interface import Map, InfoBar
 import colorama
 import pdb
 
+# CONST
+SLEEP_TIME = 0.2
+
+# GLOBAL VARS
 MAP = Map()
 INFO_BAR = InfoBar(MAP)
 colorama.init()
-
-PLAYERS: list = []          # list of players
-CURRENT_PLAYER = None       # current playing player
 
 RENDER_MODE_ACTIVE = False
 root = Tk()
@@ -16,15 +17,16 @@ canvas = Canvas(root, width=MAP.WIDTH, height=MAP.HEIGHT+INFO_BAR.HEIGHT, bg='wh
 
 
 def end_game():
-    player = None
-    for player in PLAYERS:
-        if not player.is_dead:
-            break
+    # TODO : GUI
+    # player = None
+    # for player in self.players:
+    #     if not player.is_dead:
+    #         break
 
     popup = Toplevel()
     popup.title('game over')
 
-    text = f"GAME OVER ! \n PLAYER {player.index} WON"
+    text = f"GAME OVER !"
     end_label = Label(popup, text=text, bg="black", fg="white", width=20, height=10)
     end_label.config(font=("Courier", 32, "italic"))
     end_label.pack()

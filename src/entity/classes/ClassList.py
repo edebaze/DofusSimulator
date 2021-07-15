@@ -20,7 +20,7 @@ class ClassList:
             class_ = Class(class_name)
             class_.img_path = Class.IMG_DIR + '/cra.jpeg'
             class_.add_spells([
-                SpellList.FLECHE_MAGIQUE,
+                SpellList.PRESSION,
                 SpellList.FLECHE_MAGIQUE,
             ])
 

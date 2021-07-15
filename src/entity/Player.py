@@ -32,6 +32,7 @@ class Player:
         self.mask_po: list = []                 # mask for po (constraining all ids of rect)
 
         # Stats
+        self.is_dead: bool = False
         self.BASE_HP = 100          # initial HP of the player
         self.BASE_PA = 7            # initial PA of the player
         self.BASE_PM = 3            # initial PM of the player
@@ -45,20 +46,17 @@ class Player:
         self.reward: int = 0                # reward of the last action
         self.num_actions_in_turn: int = 0   # number of actions taken during the turn
 
-        # Other
+        # Rendering
         self.render_mode_active: bool = False
-        self.print_mode_active: bool = True
-        self.is_dead: bool = False
+        self.print_mode_active: bool = False
+        self.sleep_mode_active: bool = True if self.render_mode_active else False
 
         self.selected_spell: (None, Spell) = None       # current selected spell
 
 # ======================================================================================================================
     # INITIALIZATION
-    def create(self, pos: tuple):
-        (self.box_x, self.box_y) = pos
-        self.place()
-
     def display(self):
+        # TODO : GUI
         self.tk_img = ImageTk.PhotoImage(Image.open(self.class_.img_path).resize((MAP.BOX_DIM, MAP.BOX_DIM)))
         self.label = Label(canvas, image=self.tk_img)
         self.label.place(x=self.x, y=self.y, anchor=NW)
@@ -72,6 +70,7 @@ class Player:
         """
         self.round_starts()
 
+        # TODO : GUI
         if self.render_mode_active:
             self.add_info()                 # display player info to the info_bar
             self.set_click_key_bindings()   # set key bindings
@@ -106,7 +105,7 @@ class Player:
         return reward
 
 # ======================================================================================================================
-    # CLICK BINDINGS
+    # CLICK BINDINGS         # TODO : GUI
     def set_click_key_bindings(self):
         canvas.bind("<Button-1>", self.move_to_position)
         root.bind("<Button-3>", self.get_box_content)
@@ -123,7 +122,7 @@ class Player:
         print(f'(x={x}, y={y}) : {content}')
 
 # ======================================================================================================================
-    # HOVER BINDINGS
+    # HOVER BINDINGS        # TODO : GUI
     def set_hover(self):
         self.label.bind('<Enter>', self.create_mask_pm)
         self.label.bind('<Leave>', self.delete_mask_pm)
@@ -136,6 +135,7 @@ class Player:
             bind movement keys
         :return:
         """
+        # TODO : TO GUI
         root.bind('<Left>', self.move_left)
         root.bind('<Right>', self.move_right)
         root.bind('<Up>', self.move_up)
@@ -168,104 +168,9 @@ class Player:
         self.box_y = box_y_selected
         self.move(pm_used)
 
-    # __________________________________________________________________________________________________________________
-    def move(self, pm_used=1):
-        self.pm -= pm_used
-        self.place()
-
-        if self.render_mode_active:
-            INFO_BAR.set_pm(self.pm)
-            self.label.place(x=self.box_x * MAP.BOX_DIM, y=self.box_y * MAP.BOX_DIM)
-
-    # __________________________________________________________________________________________________________________
-    def is_move_ok(self, box_x, box_y):
-        if self.pm == 0:
-            self.print('NO PM LEFT')
-            return False
-
-        if not MAP.is_empty(box_x, box_y):
-            self.print('BOX NOT EMPTY')
-            return False
-
-        return True
-
-    # __________________________________________________________________________________________________________________
-    def move_left(self, event=None):
-        box_x = self.box_x - 1
-
-        if not self.is_move_ok(box_x, self.box_y):
-            self.reward += RewardList.BAD_MOVEMENT
-            return
-
-        self.box_x = box_x
-        self.move()
-
-    # __________________________________________________________________________________________________________________
-    def move_right(self, event=None):
-        box_x = self.box_x + 1
-
-        if not self.is_move_ok(box_x, self.box_y):
-            self.reward += RewardList.BAD_MOVEMENT
-            return
-
-        self.box_x = box_x
-        self.move()
-
-    # __________________________________________________________________________________________________________________
-    def move_up(self, event=None):
-        box_y = self.box_y - 1
-
-        if not self.is_move_ok(self.box_x, box_y):
-            self.reward += RewardList.BAD_MOVEMENT
-            return
-
-        self.box_y = box_y
-        self.move()
-
-    # __________________________________________________________________________________________________________________
-    def move_down(self, event=None):
-        box_y = self.box_y + 1
-
-        if not self.is_move_ok(self.box_x, box_y):
-            self.reward += RewardList.BAD_MOVEMENT
-            return
-
-        self.box_y = box_y
-        self.move()
 
 # ======================================================================================================================
     # ACTIONS
-    def auto_cast_spell(self, spell_index):
-        """ select a spell and cast it. If player is in range attack him otherwise cast in the void """
-        spell = self.class_.spells[spell_index]
-        self.select_spell(spell.type)
-        if self.selected_spell is None:
-            return
-
-        po = spell.po + int(spell.is_po_mutable) * self.po
-
-        # =================================================================================
-        # CHECK IF PLAYER IS IN RANGE
-        for player in PLAYERS:
-            if player.item_value == self.item_value:
-                continue
-            distance_box_x = abs(player.box_x - self.box_x)
-            distance_box_y = abs(player.box_y - self.box_y)
-            distance_box = distance_box_x + distance_box_y
-
-            if distance_box <= po:
-                self.hit(player)
-            else:
-                self.reward += RewardList.BAD_SPELL_CASTING
-                self.print(f'{spell.name} CASTED ON NOTHING')
-
-        self.pa -= self.selected_spell.pa   # use PA
-        self.deselect_spell()
-
-        if self.render_mode_active:
-            INFO_BAR.set_pa(self.pa)  # display use of PA in the info bar
-
-    # __________________________________________________________________________________________________________________
     def select_spell(self, spell_type: int):
         self.deselect_spell()
 
@@ -277,6 +182,7 @@ class Player:
 
         self.selected_spell = spell
 
+        # TODO : GUI
         if self.render_mode_active:
             canvas.unbind("<Button-1>")
             root.bind("<Button-1>", self.cast_spell)
@@ -288,70 +194,11 @@ class Player:
         if self.selected_spell is not None:
             self.selected_spell = None
 
+            # TODO : GUI
             if self.render_mode_active:
                 self.reset_left_click_binding()
                 self.delete_mask_po()
                 root.unbind('<Button-1>')
-
-    # __________________________________________________________________________________________________________________
-    def cast_spell(self, event):
-        """ cast the selected spell """
-        if self.selected_spell is None:
-            self.print('NO SPELL SELECTED')
-            return
-
-        spell = self.selected_spell
-        box_x_selected, box_y_selected = MAP.get_selected_box(event)
-
-        # =================================================================================
-        # CHECK IS IN MAP
-        if not (MAP.BOX_WIDTH > box_x_selected >= 0 and MAP.BOX_HEIGHT > box_y_selected >= 0):
-            self.print('OUTSIDE THE MAP')
-            self.deselect_spell()
-            return
-
-        # =================================================================================
-        # CHECK IS IN PO
-        po = spell.po + int(spell.is_po_mutable) * self.po
-        num_box = abs(self.box_x - box_x_selected) + abs(self.box_y - box_y_selected)
-        if num_box > po:
-            self.print('SPELL OUT OF PO RANGE')
-            self.deselect_spell()
-            return
-
-        box_content = MAP.box(box_x_selected, box_y_selected)
-
-        # =================================================================================
-        # CHECK OTHER PLAYERS
-        if box_content > MapItemList.PLAYER_1:
-            for player in PLAYERS:
-                if player.item_value == box_content:
-                    self.hit(player)
-
-        # =================================================================================
-        # CHECK VOID
-        elif box_content == MapItemList.VOID:
-            self.print('HIT VOID')
-            self.deselect_spell()
-            return
-
-        # =================================================================================
-        # CHECK BLOCK
-        elif box_content == MapItemList.BLOCK:
-            self.print('HIT BLOCK')
-            self.deselect_spell()
-            return
-
-        # =================================================================================
-        # CHECK EMPTY
-        elif box_content == MapItemList.EMPTY:
-            self.print('HIT EMPTY CASE')
-
-        self.pa -= self.selected_spell.pa   # use PA
-        self.deselect_spell()
-
-        if self.render_mode_active:
-            INFO_BAR.set_pa(self.pa)  # display use of PA in the info bar
 
     # __________________________________________________________________________________________________________________
     def hit(self, player):
@@ -374,7 +221,6 @@ class Player:
 
         # -- if targeted player is dead
         if player.is_dead:
-            print(player.name + ' IS DEAD')
             if player.team != self.team:
                 self.reward += RewardList.KILL     # positive reward if not ally
             else:
@@ -402,7 +248,7 @@ class Player:
         self.reward += RewardList.DIE
 
 # ======================================================================================================================
-    # INFO BAR
+    # INFO BAR # TODO : GUI
     def add_info(self):
         if INFO_BAR.portrait_label is None:
             INFO_BAR.init_labels(canvas)
@@ -451,7 +297,7 @@ class Player:
         INFO_BAR.spells_labels.append(label)
 
 # ======================================================================================================================
-    # MASKS
+    # MASKS  # TODO : GUI
     def create_mask_pm(self, event=None):
         self.mask_pm = self.create_mask_range(self.box_x, self.box_y, self.pm, 'green')
 
@@ -513,17 +359,6 @@ class Player:
 
 # ======================================================================================================================
     # UTILITY
-    def place(self):
-        # -- get previous position of the item
-        pos = np.argwhere(MAP.matrix == self.item_value)
-        if len(pos) != 0:
-            # -- delete the item
-            pos = pos[0]
-            MAP.matrix[pos[0], pos[1]] = MapItemList.EMPTY
-
-        # -- place the item
-        MAP.place(self.box_x, self.box_y, self.item_value)
-
     def print(self, msg):
         if not self.print_mode_active:
             return
@@ -564,49 +399,3 @@ class Player:
             self.hp,
             self.po
         ])
-
-    def do(self, action: int) -> bool:
-        """
-            execute action from ActionList
-        :param action:
-        :return: bool -> continue playing or not
-        """
-        self.num_actions_in_turn += 1
-
-        if self.render_mode_active:
-            time.sleep(0.5)
-
-        if action == ActionList.END_TURN:
-            self.print('END_TURN')
-            # return False
-            return True     # TODO : set back to FALSE
-
-        elif action == ActionList.MOVE_LEFT:
-            self.print('MOVE_LEFT')
-            self.move_left()
-
-        elif action == ActionList.MOVE_RIGHT:
-            self.print('MOVE_RIGHT')
-            self.move_right()
-
-        elif action == ActionList.MOVE_UP:
-            self.print('MOVE_UP')
-            self.move_up()
-
-        elif action == ActionList.MOVE_DOWN:
-            self.print('MOVE_DOWN')
-            self.move_down()
-
-        elif action == ActionList.CAST_SPELL_1:
-            self.auto_cast_spell(1)
-
-        elif action == ActionList.CAST_SPELL_2:
-            self.auto_cast_spell(2)
-
-        elif action == ActionList.CAST_SPELL_3:
-            self.auto_cast_spell(3)
-
-        else:
-            self.print(f'Unkown action {action}')
-
-        return True
