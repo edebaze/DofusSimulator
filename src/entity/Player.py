@@ -1,5 +1,5 @@
 from globals import *
-from agents import Agent
+from agents import Agent, RewardList
 from entity.interface.MapItemList import MapItemList
 from entity.actions.ActionList import ActionList
 from entity.classes import ClassList, Class
@@ -10,6 +10,8 @@ import numpy as np
 
 
 class Player:
+    MAX_ACTIONS_IN_TURN = 10
+
     def __init__(self, index: int, class_name: str, item_value: int, agent: (None, Agent) = None):
         # Identity
         self.agent = agent
@@ -39,12 +41,13 @@ class Player:
         self.pm = self.BASE_PM      # current PM of the player
         self.po = self.BASE_PO      # current PO of the player
 
-        # Reward data
-        self.turn_lost_hp: int = 0          # hp lost this turn (during adverser turn)
-        self.past_turn_lost_hp: int = 0     # hp lost last turn (during adverser turn)
+        # Agent Data
+        self.reward: int = 0                # reward of the last action
+        self.num_actions_in_turn: int = 0   # number of actions taken during the turn
 
         # Other
         self.render_mode_active: bool = False
+        self.print_mode_active: bool = True
         self.is_dead: bool = False
 
         self.selected_spell: (None, Spell) = None       # current selected spell
@@ -62,8 +65,6 @@ class Player:
 
     def round_starts(self):
         self.reset()
-        self.past_turn_lost_hp = self.turn_lost_hp
-        self.turn_lost_hp = 0
 
     def activate(self):
         """
@@ -91,17 +92,35 @@ class Player:
     def reset(self):
         self.pa = self.BASE_PA
         self.pm = self.BASE_PM
+        self.num_actions_in_turn = 0
+
+# ======================================================================================================================
+    # ENV METHODS
+    def get_reward(self):
+        """
+            return reward and reset it
+        :return:
+        """
+        reward = self.reward
+        self.reward = 0
+        return reward
 
 # ======================================================================================================================
     # CLICK BINDINGS
     def set_click_key_bindings(self):
         canvas.bind("<Button-1>", self.move_to_position)
-        canvas.bind("<Button-2>", self.reset_left_click_binding)
+        root.bind("<Button-3>", self.get_box_content)
         return
 
     def reset_left_click_binding(self, event=None):
         self.deselect_spell()
         canvas.bind("<Button-1>", self.move_to_position)
+
+    @staticmethod
+    def get_box_content(event):
+        x, y = MAP.get_selected_box(event)
+        content = MAP.box(x, y)
+        print(f'(x={x}, y={y}) : {content}')
 
 # ======================================================================================================================
     # HOVER BINDINGS
@@ -132,17 +151,17 @@ class Player:
 
         box_x_selected, box_y_selected = MAP.get_selected_box(event)
         if not MAP.is_empty(box_x_selected, box_y_selected):
-            print('BOX NOT EMPTY')
+            self.print('BOX NOT EMPTY')
             return
 
         move_box_x = box_x_selected - self.box_x
         move_box_y = box_y_selected - self.box_y
         pm_used = abs(move_box_x) + abs(move_box_y)
 
-        print(move_box_x, move_box_y)
+        self.print(f'{move_box_x}, {move_box_y}')
 
         if pm_used > self.pm:
-            print('NOT ENOUGH PM')
+            self.print('NOT ENOUGH PM')
             return
 
         self.box_x = box_x_selected
@@ -159,13 +178,23 @@ class Player:
             self.label.place(x=self.box_x * MAP.BOX_DIM, y=self.box_y * MAP.BOX_DIM)
 
     # __________________________________________________________________________________________________________________
-    def move_left(self, event=None):
+    def is_move_ok(self, box_x, box_y):
         if self.pm == 0:
+            self.print('NO PM LEFT')
             return False
 
+        if not MAP.is_empty(box_x, box_y):
+            self.print('BOX NOT EMPTY')
+            return False
+
+        return True
+
+    # __________________________________________________________________________________________________________________
+    def move_left(self, event=None):
         box_x = self.box_x - 1
-        if not MAP.is_empty(box_x, self.box_y):
-            print('BOX NOT EMPTY')
+
+        if not self.is_move_ok(box_x, self.box_y):
+            self.reward += RewardList.BAD_MOVEMENT
             return
 
         self.box_x = box_x
@@ -173,12 +202,10 @@ class Player:
 
     # __________________________________________________________________________________________________________________
     def move_right(self, event=None):
-        if self.pm == 0:
-            return
-
         box_x = self.box_x + 1
-        if not MAP.is_empty(box_x, self.box_y):
-            print('BOX NOT EMPTY')
+
+        if not self.is_move_ok(box_x, self.box_y):
+            self.reward += RewardList.BAD_MOVEMENT
             return
 
         self.box_x = box_x
@@ -186,12 +213,10 @@ class Player:
 
     # __________________________________________________________________________________________________________________
     def move_up(self, event=None):
-        if self.pm == 0:
-            return
-
         box_y = self.box_y - 1
-        if not MAP.is_empty(box_y, self.box_y):
-            print('BOX NOT EMPTY')
+
+        if not self.is_move_ok(self.box_x, box_y):
+            self.reward += RewardList.BAD_MOVEMENT
             return
 
         self.box_y = box_y
@@ -199,24 +224,20 @@ class Player:
 
     # __________________________________________________________________________________________________________________
     def move_down(self, event=None):
-        if self.pm == 0:
+        box_y = self.box_y + 1
+
+        if not self.is_move_ok(self.box_x, box_y):
+            self.reward += RewardList.BAD_MOVEMENT
             return
 
-        box_y = self.box_y + 1
-        if not MAP.is_empty(box_y, self.box_y):
-            print('BOX NOT EMPTY')
-            return
         self.box_y = box_y
         self.move()
 
-        if self.render_mode_active:
-            self.label.place(y=box_y * MAP.BOX_DIM)
-
 # ======================================================================================================================
     # ACTIONS
-    def auto_cast_spell(self):
+    def auto_cast_spell(self, spell_index):
         """ select a spell and cast it. If player is in range attack him otherwise cast in the void """
-        spell = self.class_.spells[-1]
+        spell = self.class_.spells[spell_index]
         self.select_spell(spell.type)
         if self.selected_spell is None:
             return
@@ -235,7 +256,8 @@ class Player:
             if distance_box <= po:
                 self.hit(player)
             else:
-                print(spell.name, 'cast on nothing')
+                self.reward += RewardList.BAD_SPELL_CASTING
+                self.print(f'{spell.name} CASTED ON NOTHING')
 
         self.pa -= self.selected_spell.pa   # use PA
         self.deselect_spell()
@@ -249,7 +271,8 @@ class Player:
 
         spell = SpellList.get(spell_type)
         if self.pa - spell.pa < 0:
-            print("can't select spell", spell.name)
+            self.print(f"CAN'T SELECT SPELL {spell.name}")
+            self.reward += RewardList.BAD_SPELL_SELECTION
             return
 
         self.selected_spell = spell
@@ -274,27 +297,16 @@ class Player:
     def cast_spell(self, event):
         """ cast the selected spell """
         if self.selected_spell is None:
-            print('NO SPELL SELECTED')
+            self.print('NO SPELL SELECTED')
             return
-
-        # -- init absolute start position
-        x_start = 0
-        y_start = 0
-        if isinstance(event.widget, Label):
-            x_start = event.widget.winfo_x()
-            y_start = event.widget.winfo_y()
 
         spell = self.selected_spell
         box_x_selected, box_y_selected = MAP.get_selected_box(event)
-        box_x_selected += x_start // MAP.BOX_DIM
-        box_y_selected += y_start // MAP.BOX_DIM
-
-        print(box_x_selected, box_y_selected)
 
         # =================================================================================
         # CHECK IS IN MAP
         if not (MAP.BOX_WIDTH > box_x_selected >= 0 and MAP.BOX_HEIGHT > box_y_selected >= 0):
-            print('OUTSIDE THE MAP')
+            self.print('OUTSIDE THE MAP')
             self.deselect_spell()
             return
 
@@ -303,7 +315,7 @@ class Player:
         po = spell.po + int(spell.is_po_mutable) * self.po
         num_box = abs(self.box_x - box_x_selected) + abs(self.box_y - box_y_selected)
         if num_box > po:
-            print('SPELL OUT OF PO RANGE')
+            self.print('SPELL OUT OF PO RANGE')
             self.deselect_spell()
             return
 
@@ -319,21 +331,21 @@ class Player:
         # =================================================================================
         # CHECK VOID
         elif box_content == MapItemList.VOID:
-            print('HIT VOID')
+            self.print('HIT VOID')
             self.deselect_spell()
             return
 
         # =================================================================================
         # CHECK BLOCK
         elif box_content == MapItemList.BLOCK:
-            print('HIT BLOCK')
+            self.print('HIT BLOCK')
             self.deselect_spell()
             return
 
         # =================================================================================
         # CHECK EMPTY
         elif box_content == MapItemList.EMPTY:
-            print('HIT EMPTY CASE')
+            self.print('HIT EMPTY CASE')
 
         self.pa -= self.selected_spell.pa   # use PA
         self.deselect_spell()
@@ -349,12 +361,27 @@ class Player:
         :return:
         """
         damages = self.selected_spell.damages()
-        print(self.selected_spell.name, ':', damages, 'hp')
+        self.print(f'{self.selected_spell.name}: {damages} hp')
         player.get_hit(damages)
+
+        # update reward if player is not an ally
+        if player.team != self.team:
+            self.reward += damages
 
         # -- if self hit, display new hp
         if player.index == self.index and self.render_mode_active:
             INFO_BAR.set_hp(self.hp)
+
+        # -- if targeted player is dead
+        if player.is_dead:
+            print(player.name + ' IS DEAD')
+            if player.team != self.team:
+                self.reward += RewardList.KILL     # positive reward if not ally
+            else:
+                self.reward -= RewardList.KILL     # negative reward if ally
+
+            if self.render_mode_active:
+                end_game()
 
     # __________________________________________________________________________________________________________________
     def get_hit(self, damages: int):
@@ -364,7 +391,7 @@ class Player:
         :return:
         """
         self.hp -= damages
-        self.turn_lost_hp += damages
+        self.reward -= damages
 
         if self.hp <= 0:
             self.die()
@@ -372,9 +399,7 @@ class Player:
     # __________________________________________________________________________________________________________________
     def die(self):
         self.is_dead = True
-
-        if self.render_mode_active:
-            end_game()
+        self.reward += RewardList.DIE
 
 # ======================================================================================================================
     # INFO BAR
@@ -499,6 +524,12 @@ class Player:
         # -- place the item
         MAP.place(self.box_x, self.box_y, self.item_value)
 
+    def print(self, msg):
+        if not self.print_mode_active:
+            return
+        color = colorama.Fore.RED if self.team == 1 else colorama.Fore.BLUE
+        print(f'{color}{msg}{colorama.Fore.RESET}')
+
 
 # ======================================================================================================================
     # DEPENDENT PROPS
@@ -514,9 +545,15 @@ class Player:
     # __________________________________________________________________________________________________________________
     @property
     def continue_playing(self) -> bool:
+        if self.num_actions_in_turn >= self.MAX_ACTIONS_IN_TURN:
+            return False
+
         # TODO : change that (that's because IA can only cast last spell for now)
         min_pa_action = self.class_.spells[-1].pa
-        return self.pm > 0 and self.pa >= min_pa_action
+        if self.pm == 0 and self.pa < min_pa_action:
+            return False
+
+        return True
 
 # ======================================================================================================================
     # ENV ACTIONS
@@ -534,25 +571,42 @@ class Player:
         :param action:
         :return: bool -> continue playing or not
         """
+        self.num_actions_in_turn += 1
+
+        if self.render_mode_active:
+            time.sleep(0.5)
+
         if action == ActionList.END_TURN:
-            print('END_TURN')
-            return False
+            self.print('END_TURN')
+            # return False
+            return True     # TODO : set back to FALSE
+
         elif action == ActionList.MOVE_LEFT:
-            print('MOVE_LEFT')
+            self.print('MOVE_LEFT')
             self.move_left()
+
         elif action == ActionList.MOVE_RIGHT:
-            print('MOVE_RIGHT')
+            self.print('MOVE_RIGHT')
             self.move_right()
+
         elif action == ActionList.MOVE_UP:
-            print('MOVE_UP')
+            self.print('MOVE_UP')
             self.move_up()
+
         elif action == ActionList.MOVE_DOWN:
-            print('MOVE_DOWN')
+            self.print('MOVE_DOWN')
             self.move_down()
-        elif action == ActionList.CAST_SPELL:
-            print('CAST_SPELL')
-            self.auto_cast_spell()
+
+        elif action == ActionList.CAST_SPELL_1:
+            self.auto_cast_spell(1)
+
+        elif action == ActionList.CAST_SPELL_2:
+            self.auto_cast_spell(2)
+
+        elif action == ActionList.CAST_SPELL_3:
+            self.auto_cast_spell(3)
+
         else:
-            print('Unkown action', action)
+            self.print(f'Unkown action {action}')
 
         return True

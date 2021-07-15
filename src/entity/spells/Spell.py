@@ -17,4 +17,5 @@ class Spell:
         self.is_po_mutable: bool = True
 
     def damages(self) -> int:
-        return random.randint(self.min_damage, self.max_damage)
+        # return random.randint(self.min_damage, self.max_damage)
+        return self.max_damage

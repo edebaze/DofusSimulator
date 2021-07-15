@@ -11,33 +11,48 @@ import pdb
 
 
 class GameController:
-    def __init__(self, ia_players: list = []):
+    MAX_TURN_GAME = 100
+
+    def __init__(self, ia_players: list = [None, None]):
         self.ia_players: list = ia_players
+        # self.actions: list = [ActionList.MOVE_LEFT, ActionList.MOVE_RIGHT, ActionList.MOVE_UP, ActionList.MOVE_DOWN, ActionList.CAST_SPELL_1]
         self.actions: list = ActionList.get_actions()
         self.n_actions: int = len(self.actions)
+
+        self.turn: int = 1
 
 # ======================================================================================================================
     # ENV METHODS
     def reset(self):
+        self.turn = 1
         self.create_players(self.ia_players)
-
-        return self.get_state(), 0, False
+        return self.get_state()
 
     def step(self, action):
         continue_playing = CURRENT_PLAYER.do(action)
         if continue_playing:
             continue_playing = CURRENT_PLAYER.continue_playing
 
-        return self.get_state(), self.get_reward(), self.get_done(), continue_playing
+        if CURRENT_PLAYER.reward > 500:
+            pdb.set_trace()
+        (state, reward, done) = (self.get_state(), self.get_reward(), self.get_done())
 
-    @staticmethod
-    def render():
+        if done:
+            continue_playing = False
+
+        if not continue_playing:
+            self.end_turn()
+
+        return state, reward, done, continue_playing
+
+    def render(self):
         MAP.display(canvas)
         for player in PLAYERS:
             player.render_mode_active = True
             player.display()
 
         CURRENT_PLAYER.activate()
+        self.set_key_bindings()
 
         root.mainloop()
 
@@ -48,6 +63,16 @@ class GameController:
         state = np.concatenate([state, self.get_players_state()])
         return state
 
+    def get_done(self):
+        if self.turn >= self.MAX_TURN_GAME:
+            return True
+
+        for player in PLAYERS:
+            if player.is_dead:
+                return True
+
+        return False
+
     @staticmethod
     def get_players_state():
         state = np.empty(0)
@@ -57,27 +82,14 @@ class GameController:
         return state
 
     @staticmethod
-    def get_done():
-        for player in PLAYERS:
-            if player.is_dead:
-                return True
-        return False
-
-    @staticmethod
     def get_reward() -> int:
-        reward = 0
-        reward -= CURRENT_PLAYER.past_turn_lost_hp  # hp lost last turn (while adverser was playing) impact current reward with negative value
-        reward -= CURRENT_PLAYER.turn_lost_hp       # hp lost this turn (self hit) impact current reward with negative value
-
-        for player in PLAYERS:
-            if player.item_value == CURRENT_PLAYER.item_value:
-                continue
-            reward += player.turn_lost_hp           # adverser hp lost this turn impact the current reward with positive value
-
-        return reward
+        return CURRENT_PLAYER.get_reward()
 
     @staticmethod
     def create_players(ia_players):
+        if len(PLAYERS) > 0:
+            globals()['PLAYERS'] = []
+
         # -- create first player
         box_x = random.randint(1, MAP.BOX_WIDTH - 2)
         box_y = random.randint(MAP.BOX_HEIGHT - 1 - 3, MAP.BOX_HEIGHT - 2)
@@ -90,7 +102,7 @@ class GameController:
         # -- create second player
         box_x = random.randint(1, MAP.BOX_WIDTH - 2)
         box_y = random.randint(1, 4)
-        player = Player(1, ClassList.CRA, item_value=MapItemList.PLAYER_2, agent=ia_players[0])
+        player = Player(1, ClassList.IOP, item_value=MapItemList.PLAYER_2, agent=ia_players[1])
         player.name = 'Player 2'
         player.team = 2
         player.po = 6
@@ -105,6 +117,7 @@ class GameController:
 # ======================================================================================================================
     # TURN
     def end_turn(self, event=None):
+        self.turn += 1
         self.next_player()
         if CURRENT_PLAYER.agent is not None:
             continue_playing = True
@@ -115,9 +128,8 @@ class GameController:
                 state, reward, done, continue_playing = self.step(action)
                 action_counter += 1         # avoid infinite or too long loop
 
-            self.end_turn()
-
     def next_player(self):
+        print(colorama.Fore.RESET, end='')
         current_player_index = (CURRENT_PLAYER.index + 1) % self.num_players
         globals()['CURRENT_PLAYER']  = PLAYERS[current_player_index]
 

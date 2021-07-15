@@ -1,9 +1,11 @@
 from tkinter import *
 from entity.interface import Map, InfoBar
+import colorama
 import pdb
 
 MAP = Map()
 INFO_BAR = InfoBar(MAP)
+colorama.init()
 
 RENDER_MODE_ACTIVE = False
 PLAYERS: list = []

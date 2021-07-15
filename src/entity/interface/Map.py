@@ -1,4 +1,5 @@
 from entity.interface.MapItemList import MapItemList
+from tkinter import Label
 import pdb
 import numpy as np
 
@@ -81,7 +82,15 @@ class Map:
         :param event:
         :return:
         """
-        x = event.x // Map.BOX_DIM
-        y = event.y // Map.BOX_DIM
+
+        # -- init absolute start position
+        x_start = 0
+        y_start = 0
+        if isinstance(event.widget, Label):
+            x_start = event.widget.winfo_x()
+            y_start = event.widget.winfo_y()
+
+        x = (event.x + x_start) // Map.BOX_DIM
+        y = (event.y + y_start) // Map.BOX_DIM
 
         return x, y

@@ -7,7 +7,9 @@ class ActionList:
     MOVE_RIGHT: int     = 2
     MOVE_UP: int        = 3
     MOVE_DOWN: int      = 4
-    CAST_SPELL: int     = 5
+    CAST_SPELL_1: int   = 5
+    CAST_SPELL_2: int   = 6
+    CAST_SPELL_3: int   = 7
 
     @staticmethod
     def get_actions():

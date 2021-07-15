@@ -27,8 +27,8 @@ class SpellList:
             spell.img = Spell.IMG_DIR + '/cac.jpg'
             spell.pa = 4
             spell.po = 1
-            spell.max_damage = 20
-            spell.min_damage = 18
+            spell.max_damage = 35
+            spell.min_damage = 25
             spell.is_po_mutable = False
 
         elif spell_type == SpellList.PRESSION:
