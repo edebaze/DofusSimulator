@@ -13,7 +13,7 @@ from tensorflow.keras.utils import to_categorical
 import numpy as np
 
 
-NUM_GAMES = 10
+NUM_GAMES = 1
 
 LR = 1e-3
 EPOCHS = 50
@@ -40,9 +40,6 @@ if __name__ == '__main__':
         state = env.reset()
 
         while not done:
-            # print('============================================================================')
-            # print('TURN:', j)
-
             continue_playing = True
             while continue_playing and not done:
                 action = agent.choose_action(state)

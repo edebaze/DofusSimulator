@@ -98,7 +98,7 @@ class Agent:
         if self.memory.mem_cnter < self.batch_size:
             return
 
-        states, new_states, actions, rewards, dones = self.memory.sample_buffer(self.batch_size)
+        states, new_states, actions, rewards, terminals = self.memory.sample_buffer(self.batch_size)
 
         q_eval = self.model.predict(states)  # predicted current Q table
         q_next = self.model.predict(new_states)  # predicted NEXT Q table
@@ -106,7 +106,7 @@ class Agent:
 
         batch_index = np.arange(self.batch_size, dtype=np.int32)
 
-        q_target[batch_index, actions] = rewards + self.gamma * np.max(q_next, axis=1) * dones
+        q_target[batch_index, actions] = rewards + self.gamma * np.max(q_next, axis=1) * terminals
 
         self.model.train_on_batch(states, q_target)
 

@@ -19,6 +19,9 @@ class GameController:
         self.actions: list = ActionList.get_actions()
         self.n_actions: int = len(self.actions)
 
+        self.players = []
+        self.current_player = None
+
         self.turn: int = 1
 
 # ======================================================================================================================

@@ -7,9 +7,10 @@ MAP = Map()
 INFO_BAR = InfoBar(MAP)
 colorama.init()
 
+PLAYERS: list = []          # list of players
+CURRENT_PLAYER = None       # current playing player
+
 RENDER_MODE_ACTIVE = False
-PLAYERS: list = []
-CURRENT_PLAYER = None
 root = Tk()
 canvas = Canvas(root, width=MAP.WIDTH, height=MAP.HEIGHT+INFO_BAR.HEIGHT, bg='white')
 
