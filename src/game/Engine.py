@@ -1,36 +1,49 @@
 from globals import *
 import numpy as np
 from agents.Agent import Agent
+from agents.NewAgent import NewAgent
 from agents.config.RewardList import RewardList
-from entity.GUI import GUI
-from entity.interface import Map, MapItemList
-from entity.Player import Player
-from entity.classes import ClassList
-from entity.actions.ActionList import ActionList
+from game.interface import Map, MapItemList
+from game.Player import Player
+from game.classes import ClassList
+from game.actions.ActionList import ActionList
 import random
 import copy
 import time
 import pdb
 
 
-class Engine:
+class Engine(object):
     MAX_TURN_GAME = 100
 
-    def __init__(self, agents: list = [None, None]):
-        self.gui: GUI                       = GUI()
-        self.map: Map                       = Map()
+    def __init__(self, map_number: int = 0, agents: list = [None, None]):
+        self.__name__ = 'Engine'
+
+        self.map: Map                       = Map(map_number)
         self.players: list                  = []
-        self.current_player: Player
+        self.current_player: Player         = None
         self.agents: list                   = agents
 
         self.actions: list = ActionList.get_actions()
         self.n_actions: int = len(self.actions)
 
-        # TODO : check that
-        self.sleep_mode_active = False
-        self.render_mode_active = False
-
         self.turn: int = 1
+
+    def __deepcopy__(self, memo):
+        return Engine(copy.deepcopy(self.map.map_number, memo))
+
+# ======================================================================================================================
+    def play_game(self):
+        self.reset()
+
+        while not self.get_done():
+            self.agent_turn(self.current_player.agent)
+            self.end_turn()
+
+        player_1 = self.players[0]
+        player_2 = self.players[1]
+
+        return player_1.score, player_2.score
 
 # ======================================================================================================================
     # ENV METHODS
@@ -49,24 +62,7 @@ class Engine:
         if done:
             continue_playing = False
 
-        if not continue_playing:
-            self.end_turn()
-
         return state, reward, done, continue_playing
-
-    def render(self):
-        self.map.display(canvas)
-        for player in self.players:
-            player.render_mode_active = True
-            player.sleep_mode_active = True
-            player.display()
-
-        self.current_player.activate()
-        
-        # TODO : remove
-        self.set_key_bindings()
-
-        root.mainloop()
 
 # ======================================================================================================================
     # ENV SUB_METHODS
@@ -98,42 +94,57 @@ class Engine:
     def create_players(self):
         self.players = []
 
-        # -- create first player
-        box_x = random.randint(1, self.map.BOX_WIDTH - 2)
-        box_y = random.randint(self.map.BOX_HEIGHT - 1 - 3, self.map.BOX_HEIGHT - 2)
-        player = Player(0, ClassList.IOP, item_value=MapItemList.PLAYER_1, agent=self.agents[0])
-        player.name = 'Player 1'
-        player.team = 1
-        player.box_x = box_x
-        player.box_y = box_y
-        self.place_player_on_map(player)
-        self.players.append(player)
-
-        # -- create second player
-        box_x = random.randint(1, self.map.BOX_WIDTH - 2)
-        box_y = random.randint(1, 4)
-        player = Player(1, ClassList.CRA, item_value=MapItemList.PLAYER_2, agent=self.agents[1])
-        player.name = 'Player 2'
-        player.team = 2
-        player.po = 6
-        player.box_x = box_x
-        player.box_y = box_y
-        self.place_player_on_map(player)
-        self.players.append(player)
+        self.add_player(team=1, class_name=ClassList.IOP)
+        self.add_player(team=2, class_name=ClassList.CRA)
 
         # -- set first player as current player
         self.current_player = self.players[0]
         self.current_player.activate()
 
+    def add_player(self, team, class_name=ClassList.IOP):
+        index_player = len(self.players)
+        player_name = 'Player ' + str(index_player)
+
+        box_x, box_y = self.map.get_initial_player_placement(team)
+
+        # -- create_player
+        player = Player(index_player, class_name=class_name, agent=self.agents[index_player])
+        player.name = player_name
+        player.team = team
+        player.box_x = box_x
+        player.box_y = box_y
+        self.map.place_player(player)
+        self.players.append(player)
+
+    def evaluate_next_rewards(self):
+        q_table = np.zeros(len(self.actions))
+        for i in range(len(self.actions)):
+            env = self.duplicate()
+            action = self.actions[i]
+
+            new_state, reward, done, continue_playing = env.step(action)
+
+            q_table[i] = reward
+
+        return q_table
+
+    @staticmethod
+    def copy_class(cls):
+        copy_cls = type(f'{cls.__name__}Copy', cls.__bases__, dict(cls.__dict__))
+        for name, attr in cls.__dict__.items():
+            try:
+                hash(attr)
+            except TypeError:
+                # Assume lack of __hash__ implies mutability. This is NOT
+                # a bullet proof assumption but good in many cases.
+                setattr(copy_cls, name, copy.deepcopy(attr))
+        return copy_cls
+
 # ======================================================================================================================
     # TURN
-    def end_turn(self, event=None):
+    def end_turn(self):
         self.turn += 1
         self.next_player()
-
-        # -- AGENT
-        if self.current_player.agent is not None:
-            self.agent_turn(self.current_player.agent)
 
     def next_player(self):
         print(colorama.Fore.RESET, end='')
@@ -153,32 +164,35 @@ class Engine:
 
         while continue_playing and not done:
             action = agent.choose_action(state)
-            new_state, reward, done, continue_playing = self.step(action)
 
-            agent.store_transition(
-                state=state,
-                action=action,
-                reward=reward,
-                new_state=new_state,
-                done=done
-            )
+            if isinstance(agent, Agent):
+                new_state, reward, done, continue_playing = self.step(action)
+                agent.store_transition(
+                    state=state,
+                    action=action,
+                    reward=reward,
+                    new_state=new_state,
+                    done=done
+                )
+
+            elif isinstance(agent, NewAgent):
+                q_table = self.evaluate_next_rewards()
+                new_state, reward, done, continue_playing = self.step(action)
+
+                agent.store_transition(
+                    state=state,
+                    new_state=new_state,
+                    action=action,
+                    reward=reward,
+                    q_table=q_table,
+                    done=done
+                )
+            else:
+                print('ERROR, unknown agent', agent)
+                return
 
             agent.learn()
             state = new_state
-
-        self.end_turn()
-
-# ======================================================================================================================
-    # KEY BINDING
-    def set_key_bindings(self):
-        root.bind("<space>", self.end_turn)
-        return
-
-# ======================================================================================================================
-    # UTILITY
-    def sleep(self, t=SLEEP_TIME):
-        if self.sleep_mode_active:
-            time.sleep(t)
 
 # ======================================================================================================================
     # DEPENDENT PROPS
@@ -186,76 +200,31 @@ class Engine:
     def num_players(self):
         return len(self.players)
 
-# ======================================================================================================================
-    # MAP
-    def place_player_on_map(self, player):
-        # -- get previous position of the item
-        pos = np.argwhere(self.map.matrix == player.item_value)
-        if len(pos) != 0:
-            # -- delete the item
-            pos = pos[0]
-            self.map.matrix[pos[0], pos[1]] = MapItemList.EMPTY
-
-        # -- place the item
-        self.map.place(player.box_x, player.box_y, player.item_value)
 
 # ======================================================================================================================
     # PLAYER ACTIONS
 # ======================================================================================================================
-    def do(self, action: int) -> bool:
-        """
-            execute action from ActionList
-        :param action:
-        :return: bool -> continue playing or not
-        """
-        player = self.current_player
-
-        player.num_actions_in_turn += 1  # increase number of actions taken in the turn (by the agent)
-        self.sleep(0.5)  # sleep to be able to see the actions
-
-        if action == ActionList.END_TURN:
-            player.print('END_TURN')
-            # return False
-            return True  # TODO : set back to FALSE
-
-        elif action == ActionList.MOVE_LEFT:
-            player.print('MOVE_LEFT')
-            self.move_left(self.current_player)
-
-        elif action == ActionList.MOVE_RIGHT:
-            player.print('MOVE_RIGHT')
-            self.move_right(self.current_player)
-
-        elif action == ActionList.MOVE_UP:
-            player.print('MOVE_UP')
-            self.move_up(self.current_player)
-
-        elif action == ActionList.MOVE_DOWN:
-            player.print('MOVE_DOWN')
-            self.move_down(self.current_player)
-
-        elif action == ActionList.CAST_SPELL_1:
-            self.auto_cast_spell(1)
-
-        elif action == ActionList.CAST_SPELL_2:
-            self.auto_cast_spell(2)
-
-        elif action == ActionList.CAST_SPELL_3:
-            self.auto_cast_spell(3)
-
-        else:
-            self.print(f'Unkown action {action}')
-
-        root.update()
-
-        return True
-
-# ======================================================================================================================
     # MOVE
+    def move_to_position(self, player, box_x, box_y):
+
+        move_box_x = box_x - player.box_x
+        move_box_y = box_y - player.box_y
+        required_pm = abs(move_box_x) + abs(move_box_y)
+        if not self.is_move_ok(player, box_x, box_y):
+            player.reward += RewardList.BAD_MOVEMENT
+            return
+
+        player.box_x = box_x
+        player.box_y = box_y
+        self.move(player, required_pm)
 
     # __________________________________________________________________________________________________________________
-    def is_move_ok(self, player, box_x, box_y):
-        if player.pm == 0:
+    def is_move_ok(self, player, box_x, box_y, required_pm=1):
+        if box_x >= self.map.BOX_WIDTH or box_y >= self.map.BOX_HEIGHT:
+            player.print('OUTSIDE THE MAP')
+            return False
+
+        if player.pm < required_pm:
             player.print('NO PM LEFT')
             return False
 
@@ -268,12 +237,7 @@ class Engine:
     # __________________________________________________________________________________________________________________
     def move(self, player, pm_used: int = 1):
         player.pm -= pm_used
-        self.place_player_on_map(player)
-
-        # TODO : TO GUI
-        if self.render_mode_active:
-            INFO_BAR.set_pm(self.pm)
-            self.label.place(x=self.box_x * MAP.BOX_DIM, y=self.box_y * MAP.BOX_DIM)
+        self.map.place_player(player)
 
     # __________________________________________________________________________________________________________________
     def move_left(self, player):
@@ -347,12 +311,8 @@ class Engine:
         player.pa -= player.selected_spell.pa   # use PA
         player.deselect_spell()
 
-        # TODO : GUI
-        if self.render_mode_active:
-            INFO_BAR.set_pa(self.pa)  # display use of PA in the info bar
-
     # __________________________________________________________________________________________________________________
-    def cast_spell(self, event=None):
+    def cast_spell(self, box_x, box_y):
         """ cast the selected spell """
 
         player = self.current_player
@@ -362,11 +322,10 @@ class Engine:
             return
 
         spell = player.selected_spell
-        box_x_selected, box_y_selected = self.map.get_selected_box(event)
 
         # =================================================================================
         # CHECK IS IN MAP
-        if not (self.map.BOX_WIDTH > box_x_selected >= 0 and self.map.BOX_HEIGHT > box_y_selected >= 0):
+        if not (self.map.BOX_WIDTH > box_x >= 0 and self.map.BOX_HEIGHT > box_y >= 0):
             player.print('OUTSIDE THE MAP')
             player.deselect_spell()
             return
@@ -374,13 +333,13 @@ class Engine:
         # =================================================================================
         # CHECK IS IN PO
         po = spell.po + int(spell.is_po_mutable) * player.po
-        num_box = abs(player.box_x - box_x_selected) + abs(player.box_y - box_y_selected)
+        num_box = abs(player.box_x - box_x) + abs(player.box_y - box_y)
         if num_box > po:
             player.print('SPELL OUT OF PO RANGE')
             player.deselect_spell()
             return
 
-        box_content = self.map.box(box_x_selected, box_y_selected)
+        box_content = self.map.box(box_x, box_y)
 
         # =================================================================================
         # CHECK OTHER PLAYERS
@@ -411,6 +370,68 @@ class Engine:
         player.pa -= spell.pa  # use PA
         player.deselect_spell()
 
-        # TODO : GUI
-        if self.render_mode_active:
-            INFO_BAR.set_pa(player.pa)  # display use of PA in the info bar
+# ======================================================================================================================
+    # UTILITY
+    def duplicate(self):
+        """
+            Duplicate Engine to evaluate next rewards
+        :return:
+        """
+        copy_engine = copy.copy(self)
+        copy_engine.map = copy.copy(self.map)
+        copy_engine.current_player = copy.copy(self.current_player)
+        copy_engine.current_player.print_mode_active = False
+
+        copy_engine.players = []
+        for i in range(len(self.players)):
+            copy_player = self.players[i].duplicate()
+            copy_player.print_mode_active = False
+            copy_engine.players.append(copy_player)
+
+        return copy_engine
+
+# ======================================================================================================================
+    def do(self, action: int) -> bool:
+        """
+            execute action from ActionList
+        :param action:
+        :return: bool -> continue playing or not
+        """
+        player = self.current_player
+
+        player.num_actions_in_turn += 1  # increase number of actions taken in the turn (by the agent)
+
+        if action == ActionList.END_TURN:
+            player.print('END_TURN')
+            # return False
+            return True  # TODO : set back to FALSE
+
+        elif action == ActionList.MOVE_LEFT:
+            player.print('MOVE_LEFT')
+            self.move_left(self.current_player)
+
+        elif action == ActionList.MOVE_RIGHT:
+            player.print('MOVE_RIGHT')
+            self.move_right(self.current_player)
+
+        elif action == ActionList.MOVE_UP:
+            player.print('MOVE_UP')
+            self.move_up(self.current_player)
+
+        elif action == ActionList.MOVE_DOWN:
+            player.print('MOVE_DOWN')
+            self.move_down(self.current_player)
+
+        elif action == ActionList.CAST_SPELL_1:
+            self.auto_cast_spell(1)
+
+        elif action == ActionList.CAST_SPELL_2:
+            self.auto_cast_spell(2)
+
+        elif action == ActionList.CAST_SPELL_3:
+            self.auto_cast_spell(3)
+
+        else:
+            print(f'Unkown action {action}')
+
+        return True

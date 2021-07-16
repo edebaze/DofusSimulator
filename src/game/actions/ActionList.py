@@ -26,3 +26,12 @@ class ActionList:
             return False
 
         return True
+
+    @staticmethod
+    def get_cast_spell(spell_index: int):
+        action_name = 'CAST_SPELL_' + str(spell_index)
+        actions = [value for (name, value) in inspect.getmembers(ActionList) if action_name == name]
+        if actions == 0:
+            print('Unable to find aciton', action_name)
+
+        return actions[0]

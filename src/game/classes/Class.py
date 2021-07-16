@@ -1,4 +1,4 @@
-from entity.spells import SpellList, Spell
+from game.spells import SpellList, Spell
 
 
 class Class:

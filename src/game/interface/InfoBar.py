@@ -1,5 +1,5 @@
 from tkinter import Label, NW
-from entity.classes.Class import Class
+from game.classes.Class import Class
 from PIL import Image, ImageTk
 
 

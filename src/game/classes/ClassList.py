@@ -1,5 +1,5 @@
-from entity.classes.Class import Class
-from entity.spells import SpellList
+from game.classes.Class import Class
+from game.spells import SpellList
 
 
 class ClassList:

@@ -1,39 +1,27 @@
-from entity.interface.MapItemList import MapItemList
+from game.interface.MapItemList import MapItemList
 from tkinter import Label
 import pdb
 import numpy as np
+import random
 
 
 class Map:
     BOX_DIM = 50
+    PADDING = 200
 
-    def __init__(self):
-        self.matrix:        np.ndarray = np.empty(0)
+    def __init__(self, map_number: int = 0):
+        self.map_number: int    = map_number
+        self.matrix: np.ndarray = np.empty(0)
 
-        self.BOX_WIDTH:     int = 0
-        self.BOX_HEIGHT:    int = 0
-        self.WIDTH:         int = 0
-        self.HEIGHT:        int = 0
+        self.BOX_WIDTH: int     = 0
+        self.BOX_HEIGHT: int    = 0
+        self.WIDTH: int         = 0
+        self.HEIGHT: int        = 0
 
         self.create()
 
     def create(self):
-        self.matrix = np.asarray([
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        ], dtype=np.int32)
+        self.matrix = self.load_map(self.map_number)
 
         self.BOX_WIDTH = len(self.matrix[0])
         self.BOX_HEIGHT = len(self.matrix)
@@ -61,6 +49,8 @@ class Map:
         canvas.pack()
 
     def place(self, box_x, box_y, item):
+        if not self.is_empty(box_x, box_y):
+            return
         self.matrix[box_y][box_x] = item
 
     def box(self, box_x, box_y):
@@ -74,6 +64,43 @@ class Map:
 
     def show(self):
         print(self.matrix)
+
+    def get_initial_player_placement(self, team):
+        min_x = 1
+        max_x = self.BOX_WIDTH - 2
+        if team == 1:
+            min_y = self.BOX_HEIGHT - 3
+            max_y = self.BOX_HEIGHT - 2
+        elif team == 2:
+            min_y = 1
+            max_y = 2
+        else:
+            print('ERROR placing player of team', team)
+
+        box_x = random.randint(min_x, max_x)
+        box_y = random.randint(min_y, max_y)
+
+        while not self.is_empty(box_x, box_y):
+            box_x = random.randint(min_x, max_x)
+            box_y = random.randint(min_y, max_y)
+
+        return box_x, box_y
+
+    def place_player(self, player):
+        # -- get previous position of the item
+        pos = np.argwhere(self.matrix == player.item_value)
+        if len(pos) != 0:
+            # -- delete the item
+            pos = pos[0]
+            self.matrix[pos[0], pos[1]] = MapItemList.EMPTY
+
+        # -- place the item
+        self.place(player.box_x, player.box_y, player.item_value)
+
+    def get_box_content(self, event):
+        x, y = self.get_selected_box(event)
+        content = self.box(x, y)
+        print(f'(x={x}, y={y}) : {content}')
 
     @staticmethod
     def get_selected_box(event):
@@ -94,3 +121,8 @@ class Map:
         y = (event.y + y_start) // Map.BOX_DIM
 
         return x, y
+
+    @staticmethod
+    def load_map(map_number):
+        from ressources.maps import all_maps
+        return all_maps[map_number]

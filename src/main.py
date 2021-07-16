@@ -1,31 +1,42 @@
-from entity.Engine import Engine
-from agents.Agent import Agent
-from agents import Agent
+from game.Engine import Engine
+from game.GUI import GUI
+from agents import Agent, NewAgent
+
 import tensorflow as tf
+import numpy as np
 
-NUM_GAMES = 1
-
-LR = 1e-3
-EPOCHS = 50
-BATCH_SIZE = 128
+MAP_NUMBER = 1
 
 if __name__ == '__main__':
     tf.compat.v1.disable_eager_execution()
-    env = Engine([None, None])
+
+    env = Engine(map_number=MAP_NUMBER)
     state = env.reset()
 
+    # agent1 = NewAgent(
+    #     is_activated=False,
+    #     model_structure=[512, 512, 256, 256],
+    #     input_dim=state.shape,
+    #     n_actions=env.n_actions,
+    #     actions=env.actions,
+    # )
+
     agent1 = Agent(
-        lr=LR,
+        is_activated=False,
+        model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
     )
 
     agent2 = Agent(
-        lr=LR,
+        is_activated=True,
+        model_structure=[256, 128],
         input_dim=state.shape,
         actions=env.actions,
     )
 
-    game_controller = Engine([agent1, agent2])
-    game_controller.reset()
-    game_controller.render()
+    env = Engine(map_number=MAP_NUMBER, agents=[agent1, agent2])
+    gui = GUI(env)
+    gui.reset()
+    gui.render()
+

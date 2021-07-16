@@ -1,4 +1,4 @@
-from agents.ReplayBuffer import ReplayBuffer
+from agents.NewReplayBuffer import NewReplayBuffer
 
 import tensorflow as tf
 from tensorflow import keras
@@ -11,7 +11,7 @@ import numpy as np
 import pdb
 
 
-class Agent:
+class NewAgent:
     LR = 1e-3
     BATCH_SIZE = 64
 
@@ -24,12 +24,12 @@ class Agent:
     EPSILON_RESET = 10000       # reset epsilon each n predictions
     EPSILON_RESET_VALUE = 0.2   # value of espilon when epsilon is reset
 
-    def __init__(self, actions, is_activated: bool = True, model_structure: list = [], input_dim: tuple = (), model: (Model, None) = None, batch_size=BATCH_SIZE, gamma=GAMMA, epsilon=EPSILON, epsilon_decay=EPSILON_DECAY,
+    def __init__(self, actions, is_activated: bool = True, model_structure: list = [],  n_actions: int = 0, input_dim: tuple = (), model: (Model, None) = None, batch_size=BATCH_SIZE, gamma=GAMMA, epsilon=EPSILON, epsilon_decay=EPSILON_DECAY,
                  epsilon_end=EPSILON_END, epsilon_reset=EPSILON_RESET, epsilon_reset_value=EPSILON_RESET_VALUE, lr=LR, mem_size=MEM_SIZE,
                  model_file='model.h5'):
 
         self.is_activated: bool = is_activated          # is the agent auto playing or not
-        self.memory = ReplayBuffer(mem_size=mem_size, input_dim=input_dim)
+        self.memory = NewReplayBuffer(mem_size=mem_size, input_dim=input_dim, n_actions=n_actions)
 
         self.actions = actions
         self.n_actions = len(actions)  # number of actions
@@ -69,11 +69,11 @@ class Agent:
         )
         return model
 
-    def store_transition(self, state, action, reward, new_state, done):
+    def store_transition(self, state, new_state, action, reward, q_table, done):
         """
             Store state and results at index i
         """
-        self.memory.store_transition(state, action, reward, new_state, done)
+        self.memory.store_transition(state=state, action=action, reward=reward, new_state=new_state, q_table=q_table, done=done)
 
     def choose_action(self, state, allow_random=True):
         """
@@ -103,11 +103,10 @@ class Agent:
         if self.memory.mem_cnter < self.batch_size:
             return
 
-        states, new_states, actions, rewards, terminals = self.memory.sample_buffer(self.batch_size)
+        states, new_state, q_table, actions, rewards, terminals = self.memory.sample_buffer(self.batch_size)
 
-        q_eval = self.model.predict(states)  # predicted current Q table
-        q_next = self.model.predict(new_states)  # predicted NEXT Q table
-        q_target = np.copy(q_eval)  # copy q_eval
+        q_next = self.model.predict(new_state)
+        q_target = np.copy(q_table)
 
         batch_index = np.arange(self.batch_size, dtype=np.int32)
 
