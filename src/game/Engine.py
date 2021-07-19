@@ -3,14 +3,11 @@ import numpy as np
 from agents.Agent import Agent
 from agents.NewAgent import NewAgent
 from agents.config.RewardList import RewardList
-from game.interface import Map, MapItemList
+from game.map import Map, MapItemList
 from game.Player import Player
 from game.classes import ClassList
 from game.actions.ActionList import ActionList
-import random
 import copy
-import time
-import pdb
 
 
 class Engine(object):
@@ -18,10 +15,11 @@ class Engine(object):
 
     def __init__(self, map_number: int = 0, agents: list = [None, None]):
         self.__name__ = 'Engine'
+        self.map_number: int                = map_number
 
         self.map: Map                       = Map(map_number)
         self.players: list                  = []
-        self.current_player: Player         = None
+        self.current_player: Player         = Player()
         self.agents: list                   = agents
 
         self.actions: list = ActionList.get_actions()
@@ -29,27 +27,28 @@ class Engine(object):
 
         self.turn: int = 1
 
-    def __deepcopy__(self, memo):
-        return Engine(copy.deepcopy(self.map.map_number, memo))
-
 # ======================================================================================================================
     def play_game(self):
         self.reset()
 
         while not self.get_done():
-            self.agent_turn(self.current_player.agent)
+            continue_playing = True
+            while continue_playing:
+                continue_playing = self.play_action()
+
             self.end_turn()
 
         player_1 = self.players[0]
         player_2 = self.players[1]
 
-        return player_1.score, player_2.score
+        return player_1.score, player_2.score, player_1.agent.epsilon, player_2.agent.epsilon
 
 # ======================================================================================================================
     # ENV METHODS
     def reset(self):
         self.turn = 1
         self.create_players()
+        self.map.create()
         return self.get_state()
 
     def step(self, action):
@@ -128,18 +127,6 @@ class Engine(object):
 
         return q_table
 
-    @staticmethod
-    def copy_class(cls):
-        copy_cls = type(f'{cls.__name__}Copy', cls.__bases__, dict(cls.__dict__))
-        for name, attr in cls.__dict__.items():
-            try:
-                hash(attr)
-            except TypeError:
-                # Assume lack of __hash__ implies mutability. This is NOT
-                # a bullet proof assumption but good in many cases.
-                setattr(copy_cls, name, copy.deepcopy(attr))
-        return copy_cls
-
 # ======================================================================================================================
     # TURN
     def end_turn(self):
@@ -157,42 +144,44 @@ class Engine(object):
             else:
                 player.deactivate()
 
-    def agent_turn(self, agent):
+    def play_action(self, action=None):
+        agent = self.current_player.agent
         continue_playing = True
         done = False
-        state = self.get_state()        # -- get initial state of the turn
+        state = self.get_state()  # -- get initial state of the turn
 
-        while continue_playing and not done:
+        if action is None:
             action = agent.choose_action(state)
 
-            if isinstance(agent, Agent):
-                new_state, reward, done, continue_playing = self.step(action)
-                agent.store_transition(
-                    state=state,
-                    action=action,
-                    reward=reward,
-                    new_state=new_state,
-                    done=done
-                )
+        if isinstance(agent, Agent):
+            new_state, reward, done, continue_playing = self.step(action)
+            agent.store_transition(
+                state=state,
+                action=action,
+                reward=reward,
+                new_state=new_state,
+                done=done
+            )
 
-            elif isinstance(agent, NewAgent):
-                q_table = self.evaluate_next_rewards()
-                new_state, reward, done, continue_playing = self.step(action)
+        elif isinstance(agent, NewAgent):
+            q_table = self.evaluate_next_rewards()
+            new_state, reward, done, continue_playing = self.step(action)
 
-                agent.store_transition(
-                    state=state,
-                    new_state=new_state,
-                    action=action,
-                    reward=reward,
-                    q_table=q_table,
-                    done=done
-                )
-            else:
-                print('ERROR, unknown agent', agent)
-                return
+            agent.store_transition(
+                state=state,
+                new_state=new_state,
+                action=action,
+                reward=reward,
+                q_table=q_table,
+                done=done
+            )
 
-            agent.learn()
-            state = new_state
+        if done:
+            continue_playing = False
+
+        agent.learn()
+
+        return continue_playing
 
 # ======================================================================================================================
     # DEPENDENT PROPS
@@ -379,6 +368,7 @@ class Engine(object):
         """
         copy_engine = copy.copy(self)
         copy_engine.map = copy.copy(self.map)
+        copy_engine.map.matrix = copy.copy(self.map.matrix)
         copy_engine.current_player = copy.copy(self.current_player)
         copy_engine.current_player.print_mode_active = False
 
@@ -399,12 +389,12 @@ class Engine(object):
         """
         player = self.current_player
 
+        player.last_action = action
         player.num_actions_in_turn += 1  # increase number of actions taken in the turn (by the agent)
 
         if action == ActionList.END_TURN:
             player.print('END_TURN')
-            # return False
-            return True  # TODO : set back to FALSE
+            return False
 
         elif action == ActionList.MOVE_LEFT:
             player.print('MOVE_LEFT')

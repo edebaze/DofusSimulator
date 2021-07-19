@@ -1,8 +1,7 @@
 from tkinter import *
-from agents.Agent import Agent
-from agents.NewAgent import NewAgent
 from game.actions.ActionList import ActionList
-from game.interface import Map, InfoBar
+from game.map import MapItemList, Map
+from game.interface import InfoBar
 from game.Engine import Engine
 
 from PIL import Image, ImageTk
@@ -19,9 +18,9 @@ class GUI:
         self.root = None
         self.canvas = None
 
-        self.map: Map = self.engine.map
         self.info_bar: InfoBar = InfoBar(self.map)
 
+        self.destroy_at_end_game: bool = True   # destroy tk window when game is ending
         self.mask_pm: list = []                 # mask for pm (constraining all ids of rect)
         self.mask_po: list = []                 # mask for po (constraining all ids of rect)
 
@@ -45,8 +44,9 @@ class GUI:
         self.set_key_bindings()
 
         # -------------------------------------------------------------
-        # RESET MAP AND INFO_BAR
-        self.map.display(self.canvas)
+        # RESET DISPLAY MAP AND INFO_BAR
+        self.display_map()
+        self.info_bar = InfoBar(self.map)
         self.info_bar.init_labels(self.canvas)
 
         # -------------------------------------------------------------
@@ -57,7 +57,7 @@ class GUI:
         self.activate_player(self.engine.current_player)
 
     def render(self):
-        self.root.after(1, self.play_turn())
+        self.root.after(1, self.play_game())
 
         self.root.mainloop()
 
@@ -67,21 +67,44 @@ class GUI:
         print(f'PLAYER 1 score : {player_1.score}')
         print(f'PLAYER 2 score : {player_2.score}')
 
-    def step(self, action):
+    def update(self):
         player = self.engine.current_player
-
-        state, reward, done, continue_playing = self.engine.step(action)
 
         # RENDERING
         self.display_move(player)
-        if player.index == self.engine.current_player.index:
-            self.info_bar.set_hp(player.hp)
-            self.info_bar.set_pa(player.pa)
-            self.info_bar.set_pm(player.pm)
+        self.info_bar.set_hp(player.hp)
+        self.info_bar.set_pa(player.pa)
+        self.info_bar.set_pm(player.pm)
 
         self.root.update()
 
-        return state, reward, done, continue_playing
+# ======================================================================================================================
+    # MAP RENDERING
+    def display_map(self):
+        """
+             display the map to the GUI
+         :param canvas: object of class Canvas
+        """
+        canvas = self.canvas
+
+        y = 0
+        for row in self.map.matrix:
+            x = 0
+            for block in row:
+                color = 'white' if ((x + y) // self.map.BOX_DIM) % 2 == 0 else 'grey'
+
+                if block == MapItemList.VOID:
+                    color = 'black'
+
+                if block == MapItemList.BLOCK:
+                    color = 'red'
+
+                canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill=color, outline='black')
+                x += self.map.BOX_DIM
+
+            y += self.map.BOX_DIM
+
+        canvas.pack()
 
     def place_player(self, player):
         self.info_bar.set_pm(player.pm)
@@ -114,13 +137,21 @@ class GUI:
 
 # ======================================================================================================================
     # TURNS
+    def play_game(self):
+        self.play_turn()
+
+        if self.engine.get_done():
+            self.end_game()
+
     def play_turn(self):
         print('==================================================')
         print(f'TURN {self.engine.turn} with PLAYER {self.engine.current_player.index}')
 
-        agent = self.engine.current_player.agent
-        if agent.is_activated:
-            self.agent_turn(agent)
+        if self.engine.current_player.agent.is_activated:
+            continue_playing = True
+            while continue_playing:
+                continue_playing = self.play_action()
+
             self.end_turn()
 
     # __________________________________________________________________________________________________________________
@@ -139,86 +170,27 @@ class GUI:
                 self.deactivate_player(player)
 
         # -- go to next turn
-        self.root.after(1, self.play_turn())
+        if self.engine.current_player.agent.is_activated:
+            self.root.after(1, self.play_turn())
 
     # __________________________________________________________________________________________________________________
-    def agent_turn(self, agent):
-        continue_playing = True
-        done = False
-        state = self.engine.get_state()  # -- get initial state of the turn
-
-        while continue_playing and not done:
+    def play_action(self, action=None):
+        agent = self.engine.current_player.agent
+        if agent.is_activated:
             self.sleep()
 
-            action = agent.choose_action(state)
+        continue_playing = self.engine.play_action(action)
+        self.update()
 
-            if isinstance(agent, Agent):
-                new_state, reward, done, continue_playing = self.step(action)
-                agent.store_transition(
-                    state=state,
-                    action=action,
-                    reward=reward,
-                    new_state=new_state,
-                    done=done
-                )
-
-            elif isinstance(agent, NewAgent):
-                q_table = self.engine.evaluate_next_rewards()
-                new_state, reward, done, continue_playing = self.step(action)
-
-                agent.store_transition(
-                    state=state,
-                    new_state=new_state,
-                    action=action,
-                    reward=reward,
-                    q_table=q_table,
-                    done=done
-                )
-            else:
-                print('ERROR, unknown agent', agent)
-                return
-
-            agent.learn()
-            state = new_state
-
-    # __________________________________________________________________________________________________________________
-    def player_do(self, action: int):
-        agent = self.engine.current_player.agent
-        state = self.engine.get_state()  # -- get initial state of the turn
-
-        if isinstance(agent, Agent):
-            new_state, reward, done, continue_playing = self.step(action)
-            agent.store_transition(
-                state=state,
-                action=action,
-                reward=reward,
-                new_state=new_state,
-                done=done
-            )
-
-        elif isinstance(agent, NewAgent):
-            q_table = self.engine.evaluate_next_rewards()
-            new_state, reward, done, continue_playing = self.step(action)
-
-            agent.store_transition(
-                state=state,
-                new_state=new_state,
-                action=action,
-                reward=reward,
-                q_table=q_table,
-                done=done
-            )
-        else:
-            print('ERROR, unknown agent', agent)
-            return
-
-        print('ACTION:', action)
-        print('REWARD:', reward)
-
-        agent.learn()
+        return continue_playing
 
     # __________________________________________________________________________________________________________________
     def end_game(self):
+        if self.destroy_at_end_game:
+            self.root.destroy()
+            self.root = None
+            return
+
         player = None
         for player in self.engine.players:
             if not player.is_dead:
@@ -234,10 +206,6 @@ class GUI:
 
         Button(popup, text='Quit', command=self.root.destroy).pack(padx=10, pady=10)
         Button(popup, text='Restart', command=self.reset).pack(padx=10, pady=10)
-
-        # self.root.destroy()
-        # self.root = None
-        return
 
 # ======================================================================================================================
     # MOVE
@@ -259,16 +227,16 @@ class GUI:
         self.display_move(player)
 
     def move_left(self, event):
-        self.player_do(ActionList.MOVE_LEFT)
+        self.play_action(ActionList.MOVE_LEFT)
 
     def move_right(self, event):
-        self.player_do(ActionList.MOVE_RIGHT)
+        self.play_action(ActionList.MOVE_RIGHT)
 
     def move_up(self, event):
-        self.player_do(ActionList.MOVE_UP)
+        self.play_action(ActionList.MOVE_UP)
 
     def move_down(self, event):
-        self.player_do(ActionList.MOVE_DOWN)
+        self.play_action(ActionList.MOVE_DOWN)
 
     def display_move(self, player):
         self.info_bar.set_pm(self.engine.current_player.pm)
@@ -282,7 +250,7 @@ class GUI:
         for i in range(len(spells)):
             if spell.type == spells[i].type:
                 action = ActionList.get_cast_spell(i)
-                self.player_do(action)
+                self.play_action(action)
 
     # __________________________________________________________________________________________________________________
     def select_spell(self, spell):
@@ -384,6 +352,11 @@ class GUI:
 
         self.root.update()
 
+    # __________________________________________________________________________________________________________________
+    def switch_player_1(self, event):
+        self.engine.players[0].agent.is_activated = not self.engine.players[0].agent.is_activated
+
+
 # ======================================================================================================================
     # MASKS
     def create_mask_pm(self, event=None):
@@ -449,8 +422,12 @@ class GUI:
 
 # ======================================================================================================================
     # UTILITY
-    def sleep(self, t=SLEEP_TIME):
+    @staticmethod
+    def sleep(t=SLEEP_TIME):
         time.sleep(t)
 
-    def switch_player_1(self, event):
-        self.engine.players[0].agent.is_activated = not self.engine.players[0].agent.is_activated
+# ======================================================================================================================
+    # DEPENDENT PROPERTIES
+    @property
+    def map(self) -> Map:
+        return self.engine.map

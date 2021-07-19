@@ -13,7 +13,7 @@ import pdb
 
 class NewAgent:
     LR = 1e-3
-    BATCH_SIZE = 64
+    BATCH_SIZE = 256
 
     MEM_SIZE = 1000000          # size of the memory tables
     GAMMA = 0.99                # percentage of the past reward to add to the current reward in the Q-table
@@ -62,7 +62,7 @@ class NewAgent:
 
         outputs = Dense(self.n_actions, activation=None)(x)
 
-        model = Model(inputs, outputs, name="DQN model")
+        model = Model(inputs, outputs)
         model.compile(
             loss='mse',
             optimizer=Adam(learning_rate=self.lr)
@@ -103,10 +103,10 @@ class NewAgent:
         if self.memory.mem_cnter < self.batch_size:
             return
 
-        states, new_state, q_table, actions, rewards, terminals = self.memory.sample_buffer(self.batch_size)
+        states, new_states, q_tables, actions, rewards, terminals = self.memory.sample_buffer(self.batch_size)
 
-        q_next = self.model.predict(new_state)
-        q_target = np.copy(q_table)
+        q_next = self.model.predict(new_states)
+        q_target = np.copy(q_tables)
 
         batch_index = np.arange(self.batch_size, dtype=np.int32)
 

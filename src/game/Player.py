@@ -1,12 +1,12 @@
 from tkinter import Label
 from globals import *
 from agents import Agent, RewardList
-from game.interface.MapItemList import MapItemList
+from game.map.MapItemList import MapItemList
+from game.map.Map import Map
 from game.actions.ActionList import ActionList
 from game.classes import ClassList, Class
 from game.spells import SpellList, Spell
 
-import time
 import numpy as np
 import copy
 
@@ -62,6 +62,7 @@ class Player:
         """
             activate player
         """
+        self.reward += RewardList.ROUND_START   # remove reward at the beginning of a round
         self.last_action = ActionList.END_TURN  # reset last action taken this turn
         self.is_current_player = True           # set as current player this turn
         return
@@ -122,9 +123,9 @@ class Player:
 
         # update reward if player is not an ally
         if player.team != self.team:
-            self.reward += damages
+            self.reward += damages * RewardList.DAMAGES
         else:
-            self.reward -= damages      # negative reward for friendly fire
+            self.reward -= damages * RewardList.DAMAGES    # negative reward for friendly fire
 
         # -- if targeted player is dead
         if player.is_dead:
@@ -141,7 +142,7 @@ class Player:
         :return:
         """
         self.hp -= damages
-        self.reward -= damages
+        self.reward += damages * RewardList.HP_LOSS
 
         if self.hp <= 0:
             self.die()
@@ -160,9 +161,9 @@ class Player:
         print(f'{color}{msg}{colorama.Fore.RESET}')
 
     def duplicate(self):
-        copy_player = Player()
-        for attribute, value in self.__dict__.items():
-            setattr(copy_player, attribute, copy.copy(value))
+        copy_player = copy.copy(self)
+        copy_player.tk_img = ''
+        copy_player.label = ''
         return copy_player
 
 

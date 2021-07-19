@@ -1,5 +1,6 @@
 import inspect
 
+
 class MapItemList:
     EMPTY:      int = 0
     VOID:       int = 1
@@ -7,6 +8,25 @@ class MapItemList:
 
     PLAYER_1:   int = 5
     PLAYER_2:   int = 6
+
+    MAP_BOX:    list = [EMPTY, VOID, BLOCK]
+    PLAYERS:    list = [PLAYER_1, PLAYER_2]
+
+    @staticmethod
+    def get_item_values():
+        item_values = [item_value for (item_name, item_value) in inspect.getmembers(MapItemList) if MapItemList.is_item_name(item_name)]
+        item_values.sort()
+        return item_values
+
+    @staticmethod
+    def is_item_name(item_name: str) -> bool:
+        if not item_name.isupper():
+            return False
+
+        if item_name.startswith('_'):
+            return False
+
+        return True
 
     @staticmethod
     def get_player_value(player_index: int) -> (None, int):

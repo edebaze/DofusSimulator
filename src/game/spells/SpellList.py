@@ -44,13 +44,13 @@ class SpellList:
 
         elif spell_type == SpellList.FLECHE_MAGIQUE:
             spell = Spell()
-            spell.name = 'fleche_magique'
+            spell.name = 'fleche magique'
             spell.type = spell_type
             spell.img = Spell.IMG_DIR + '/fleche_magique.jpg'
             spell.pa = 4
             spell.po = 7
-            spell.max_damage = 18
-            spell.min_damage = 14
+            spell.max_damage = 6
+            spell.min_damage = 0
 
         else:
             print('Unknown spell', spell_type)

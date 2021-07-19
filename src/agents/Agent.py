@@ -62,7 +62,7 @@ class Agent:
 
         outputs = Dense(self.n_actions, activation=None)(x)
 
-        model = Model(inputs, outputs, name="DQN model")
+        model = Model(inputs, outputs)
         model.compile(
             loss='mse',
             optimizer=Adam(learning_rate=self.lr)
