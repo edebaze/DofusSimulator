@@ -1,7 +1,5 @@
 from globals import *
 import numpy as np
-from agents.Agent import Agent
-from agents.NewAgent import NewAgent
 from agents.config.RewardList import RewardList
 from game.map import Map, MapItemList
 from game.Player import Player
@@ -146,40 +144,22 @@ class Engine(object):
 
     def play_action(self, action=None):
         agent = self.current_player.agent
-        continue_playing = True
-        done = False
         state = self.get_state()  # -- get initial state of the turn
 
         if action is None:
             action = agent.choose_action(state)
 
-        if isinstance(agent, Agent):
-            new_state, reward, done, continue_playing = self.step(action)
-            agent.store_transition(
-                state=state,
-                action=action,
-                reward=reward,
-                new_state=new_state,
-                done=done
-            )
-
-        elif isinstance(agent, NewAgent):
-            q_table = self.evaluate_next_rewards()
-            new_state, reward, done, continue_playing = self.step(action)
-
-            agent.store_transition(
-                state=state,
-                new_state=new_state,
-                action=action,
-                reward=reward,
-                q_table=q_table,
-                done=done
-            )
+        new_state, reward, done, continue_playing = self.step(action)
+        agent.store_transition(
+            state=state,
+            action=action,
+            reward=reward,
+            new_state=new_state,
+            done=done
+        )
 
         if done:
             continue_playing = False
-
-        agent.learn()
 
         return continue_playing
 

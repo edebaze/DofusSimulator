@@ -151,11 +151,18 @@ class Map:
         """ show the matrix in the console """
         print(self.matrix)
 
-    def generate_random_map(self, box_w, box_h):
-        self.BOX_HEIGHT = box_h
-        self.BOX_WIDTH = box_w
+    def generate_random_map(self):
+        matrix = np.zeros((self.BOX_WIDTH, self.BOX_HEIGHT))
 
-        matrix = np.zeros()
+        # -- set map borders
+        matrix[0, :] = 1
+        matrix[:, 0] = 1
+        matrix[:, -1] = 1
+        matrix[-1, :] = 1
+
+        for i in range(self.BOX_WIDTH):
+            for j in range(self.BOX_HEIGHT):
+                continue
 
     @staticmethod
     def get_selected_box(event):
