@@ -107,7 +107,11 @@ class Engine(object):
         index_player = len(self.players)
 
         agent = self.agents[index_player]
-        agent.model_file = os.path.join(MODEL_DIR, self.name, f'player_{index_player+1}.h5')
+        model_dir = os.path.join(MODEL_DIR, self.name)
+        make_dir(model_dir)
+
+        if agent is not None:
+            agent.model_file = os.path.join(model_dir, f'player_{index_player+1}.h5')
 
         player_name = 'Player ' + str(index_player+1)
 
@@ -166,6 +170,9 @@ class Engine(object):
             new_state=new_state,
             done=done
         )
+
+        # TODO : remove
+        agent.learn()
 
         if done:
             continue_playing = False
@@ -372,7 +379,7 @@ class Engine(object):
     @staticmethod
     def create_name() -> str:
         """ create name from current timestamp """
-        date = time.time()
+        date = time.time_ns()
         return str(date)
 
 # ======================================================================================================================

@@ -33,7 +33,7 @@ class Player:
 
         # Statistics
         self.is_dead: bool = False
-        self.BASE_HP = 10          # initial HP of the player
+        self.BASE_HP = 50          # initial HP of the player
         self.BASE_PA = 7            # initial PA of the player
         self.BASE_PM = 3            # initial PM of the player
         self.BASE_PO = 2            # initial PO of the player
