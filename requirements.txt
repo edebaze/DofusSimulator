@@ -1,3 +1,4 @@
 Pillow
 colorama
 numpy
+tensorflow
