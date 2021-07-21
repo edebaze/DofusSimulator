@@ -30,6 +30,9 @@ class Engine(object):
 
         self.turn: int = 1
 
+        self.model_dir = os.path.join(MODEL_DIR, self.name)
+        make_dir(self.model_dir)
+
 # ======================================================================================================================
     def play_game(self):
         self.reset()
@@ -107,11 +110,9 @@ class Engine(object):
         index_player = len(self.players)
 
         agent = self.agents[index_player]
-        model_dir = os.path.join(MODEL_DIR, self.name)
-        make_dir(model_dir)
 
         if agent is not None:
-            agent.model_file = os.path.join(model_dir, f'player_{index_player+1}.h5')
+            agent.model_file = os.path.join(self.model_dir, f'player_{index_player+1}.h5')
 
         player_name = 'Player ' + str(index_player+1)
 

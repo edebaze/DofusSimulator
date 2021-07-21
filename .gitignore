@@ -1,9 +1,6 @@
-models/
-
 .idea/
 .vscode
 
-__pycache__/
-*.pyc
-
 venv/
+models
+*.pyc

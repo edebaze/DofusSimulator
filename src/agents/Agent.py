@@ -121,7 +121,7 @@ class Agent:
         self.model.save(self.model_file)
 
     def load_model(self):
-        self.model = keras.load_model(self.model_file)
+        self.model = tf.keras.models.load_model(self.model_file)
 
     @staticmethod
     def choose_random_action(actions):

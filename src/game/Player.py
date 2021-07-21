@@ -117,15 +117,22 @@ class Player:
         :param player:
         :return:
         """
+        # -- if targeted player is already dead, nothing to do
+        if player.is_dead:
+            return
+
         damages = self.selected_spell.damages()
         self.print(f'{self.selected_spell.name}: {damages} hp')
+
+        player_prev_hp = player.hp
         player.get_hit(damages)
+        true_damages = player_prev_hp - player.hp
 
         # update reward if player is not an ally
         if player.team != self.team:
-            self.reward += damages * RewardList.DAMAGES
+            self.reward += true_damages * RewardList.DAMAGES
         else:
-            self.reward -= damages * RewardList.DAMAGES    # negative reward for friendly fire
+            self.reward -= true_damages * RewardList.DAMAGES    # negative reward for friendly fire
 
         # -- if targeted player is dead
         if player.is_dead:
@@ -141,10 +148,15 @@ class Player:
         :param damages:
         :return:
         """
-        self.hp -= damages
-        self.reward += damages * RewardList.HP_LOSS
 
-        if self.hp <= 0:
+        prev_hp = self.hp                       # keep track of current hp for the true_damages calculation
+        self.hp = max(0, self.hp - damages)     # set player hp (min = 0)
+
+        # -- reward calculation
+        true_damages = prev_hp - self.hp
+        self.reward += true_damages * RewardList.HP_LOSS    # increment reward with true damages
+
+        if self.hp <= 0 and not self.is_dead:
             self.die()
 
     # __________________________________________________________________________________________________________________
