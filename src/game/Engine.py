@@ -1,11 +1,15 @@
 from globals import *
-import numpy as np
 from agents.config.RewardList import RewardList
 from game.map import Map, MapItemList
 from game.Player import Player
 from game.classes import ClassList
 from game.actions.ActionList import ActionList
+
+import numpy as np
+
 import copy
+import os
+import time
 
 
 class Engine(object):
@@ -13,6 +17,7 @@ class Engine(object):
 
     def __init__(self, map_number: int = 0, agents: list = [None, None]):
         self.__name__ = 'Engine'
+        self.name                           = self.create_name()
         self.map_number: int                = map_number
 
         self.map: Map                       = Map(map_number)
@@ -24,6 +29,9 @@ class Engine(object):
         self.n_actions: int = len(self.actions)
 
         self.turn: int = 1
+
+        self.model_dir = os.path.join(MODEL_DIR, self.name)
+        make_dir(self.model_dir)
 
 # ======================================================================================================================
     def play_game(self):
@@ -100,12 +108,18 @@ class Engine(object):
 
     def add_player(self, team, class_name=ClassList.IOP):
         index_player = len(self.players)
-        player_name = 'Player ' + str(index_player)
+
+        agent = self.agents[index_player]
+
+        if agent is not None:
+            agent.model_file = os.path.join(self.model_dir, f'player_{index_player+1}.h5')
+
+        player_name = 'Player ' + str(index_player+1)
 
         box_x, box_y = self.map.get_initial_player_placement(team)
 
         # -- create_player
-        player = Player(index_player, class_name=class_name, agent=self.agents[index_player])
+        player = Player(index_player, class_name=class_name, agent=agent)
         player.name = player_name
         player.team = team
         player.box_x = box_x
@@ -157,6 +171,9 @@ class Engine(object):
             new_state=new_state,
             done=done
         )
+
+        # TODO : remove
+        agent.learn()
 
         if done:
             continue_playing = False
@@ -359,6 +376,20 @@ class Engine(object):
             copy_engine.players.append(copy_player)
 
         return copy_engine
+
+    @staticmethod
+    def create_name() -> str:
+        """ create name from current timestamp """
+        date = time.time_ns()
+        return str(date)
+
+# ======================================================================================================================
+    # UTILITY
+    def get_info(self):
+        return {
+            'turn': self.turn,
+            'actions': '/'.join(self.actions)
+        }
 
 # ======================================================================================================================
     def do(self, action: int) -> bool:

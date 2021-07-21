@@ -21,18 +21,16 @@ class GUI:
         self.info_bar: InfoBar = InfoBar(self.map)
 
         self.destroy_at_end_game: bool = True   # destroy tk window when game is ending
+        self.is_destroyed: bool = False         # destroy tk window when game is ending
         self.mask_pm: list = []                 # mask for pm (constraining all ids of rect)
         self.mask_po: list = []                 # mask for po (constraining all ids of rect)
 
 # ======================================================================================================================
     # ENV METHODS
     def reset(self):
-        if self.root is not None:
-            self.root.destroy()
-            self.root = None
-
         self.root = Tk()
         self.canvas = Canvas(self.root, width=self.map.WIDTH + self.map.PADDING, height=self.map.HEIGHT + self.info_bar.HEIGHT, bg='white')
+        self.is_destroyed = False
 
         # -------------------------------------------------------------
         # RESET ENGINE
@@ -140,9 +138,6 @@ class GUI:
     def play_game(self):
         self.play_turn()
 
-        if self.engine.get_done():
-            self.end_game()
-
     def play_turn(self):
         print('==================================================')
         print(f'TURN {self.engine.turn} with PLAYER {self.engine.current_player.index}')
@@ -152,14 +147,14 @@ class GUI:
             while continue_playing:
                 continue_playing = self.play_action()
 
+                if self.engine.get_done():
+                    self.end_game()
+                    return
+
             self.end_turn()
 
     # __________________________________________________________________________________________________________________
     def end_turn(self, event=None):
-        if self.engine.get_done():
-            self.end_game()
-            return
-
         # -- end turn in the engine
         self.engine.end_turn()
 
@@ -186,9 +181,12 @@ class GUI:
 
     # __________________________________________________________________________________________________________________
     def end_game(self):
+        if self.root is None or self.is_destroyed:
+            return
+
         if self.destroy_at_end_game:
+            self.is_destroyed = True
             self.root.destroy()
-            self.root = None
             return
 
         player = None
@@ -355,7 +353,6 @@ class GUI:
     # __________________________________________________________________________________________________________________
     def switch_player_1(self, event):
         self.engine.players[0].agent.is_activated = not self.engine.players[0].agent.is_activated
-
 
 # ======================================================================================================================
     # MASKS
