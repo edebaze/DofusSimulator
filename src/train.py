@@ -66,20 +66,29 @@ if __name__ == '__main__':
     # ==================================================================================================================
     for i in range(NUM_GAMES):
         # ==============================================================================================================
-        # PLAY GAMES
-        score_1, score_2, epsilon_1, epsilon_2 = env.play_game()
+        # GENERATE DATA
+        score_1, score_2 = env.play_game()
 
+        turns.append(env.turn)
         scores_1.append(score_1)
         scores_2.append(score_2)
+        avg_turn = np.mean(turns[-100:])
         avg_score_1 = np.mean(scores_1[-100:])
         avg_score_2 = np.mean(scores_2[-100:])
 
-        print('episode:', i, 'turns:', env.turn, '| P1 score ', score_1, '| avg_score %.2f' % avg_score_1, '| epsilon %.2f' % epsilon_1, '|| P2 score %.2f' % score_2, '| avg_score %.2f' % avg_score_2, '| epsilon %.2f' % epsilon_2)
+        print('episode:', i, 'turns:', env.turn, 'turns:', env.turn, 'avg_turns: %.2f' % avg_turn, '| P1 score ', score_1, '| avg_score %.2f' % avg_score_1, '|| P2 score %.2f' % score_2, '| avg_score %.2f' % avg_score_2)
 
+        # ==============================================================================================================
+        # TRAIN MODELS
+        if i % MODULO_TRAIN == 0 and i != 0:
+            loss1 = agent1.train_on_memory()
+            loss2 = agent2.train_on_memory()
 
-        if i % 10 == 0 and i != 0:
-            agent1.train_on_memory() 
-            agent2.train_on_memory()
+            agent1.apply_epsilon_decay()
+            agent2.apply_epsilon_decay()
+
+            print('P1 loss: %.2f' % loss1, '| epsilon %.2f' % agent1.epsilon, 'P1 loss: %.2f' % loss2, '| epsilon %.2f' % agent2.epsilon)
+
         # ==============================================================================================================
         # SAVE MODELS
         if i % MODULO_SAVE and i != 0:

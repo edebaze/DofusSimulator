@@ -109,21 +109,12 @@ class Agent:
         for training_data in training_dataset:
             loss = self.train_step(*training_data)
 
+        return loss
 
     def choose_action(self, state, allow_random=True):
         """
         Choose an action from an observation
         """
-
-        # -- check if epsilon need to be reseted
-        if (
-            allow_random
-            and self.epsilon_reset > 0
-            and self.memory.mem_cnter % self.epsilon_reset == 0
-            and self.memory.mem_cnter > 0
-        ):
-            self.epsilon = self.epsilon_reset_value
-
         # -- choose random action (if random is allowed)
         if np.random.random() < self.epsilon and allow_random:
             action = np.random.choice(self.actions)
@@ -153,6 +144,17 @@ class Agent:
         self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 
         return loss
+
+    def apply_epsilon_decay(self):
+        # -- check if epsilon need to be reseted
+        if self.epsilon_reset > 0 \
+                and self.memory.mem_cnter % self.epsilon_reset == 0 \
+                and self.memory.mem_cnter > 0:
+
+            self.epsilon = self.epsilon_reset_value
+
+        else:
+            self.epsilon = max(self.epsilon_end, self.epsilon*self.epsilon_decay)
 
     def save_model(self):
         self.model.save(self.model_filename)
