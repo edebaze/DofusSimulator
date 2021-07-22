@@ -12,17 +12,17 @@ import pdb
 
 
 class Agent:
-    EPOCHS = 100
-    LR = 1e-3
-    BATCH_SIZE = 256
+    EPOCHS = 5
+    LR = 3e-4
+    BATCH_SIZE = 128
 
-    MEM_SIZE = 1000  # size of the memory tables
+    MEM_SIZE = 1e6  # size of the memory tables
     GAMMA = 0.99  # percentage of the past reward to add to the current reward in the Q-table
 
     EPSILON = 1  # percentage of chances to take a random action
-    EPSILON_DECAY = 0.999  # decrease of epsilon at each predictions
+    EPSILON_DECAY = 0.9  # decrease of epsilon at each predictions
     EPSILON_END = 1e-2  # min value of epsilon
-    EPSILON_RESET = 10000  # reset epsilon each n predictions
+    EPSILON_RESET = 1e6  # reset epsilon each n predictions
     EPSILON_RESET_VALUE = 0.1 # value of espilon when epsilon is reset
 
     def __init__(
