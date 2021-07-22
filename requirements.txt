@@ -2,3 +2,4 @@ Pillow
 colorama
 numpy
 tensorflow
+pandas
