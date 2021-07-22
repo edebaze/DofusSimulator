@@ -14,8 +14,8 @@ class ReplayBuffer:
     """
 
     def __init__(self, mem_size, input_dim, n_actions):
-        self.mem_size = mem_size        # max size of the memory
-        self.n_actions = n_actions
+        self.mem_size: int = int(mem_size)        # max size of the memory
+        self.n_actions: int = n_actions
         self.mem_cnter = 0              # current index of state
 
         # Memory of STATES

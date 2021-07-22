@@ -29,11 +29,11 @@ class Player:
 
         # Canvas items
         self.tk_img = None                      # image of the player (PhotoImage object)
-        self.label: (None, Label) = None        # label of the image in Canvas
+        self.label: Label = None        # label of the image in Canvas
 
         # Statistics
         self.is_dead: bool = False
-        self.BASE_HP = 50          # initial HP of the player
+        self.BASE_HP = 50           # initial HP of the player
         self.BASE_PA = 7            # initial PA of the player
         self.BASE_PM = 3            # initial PM of the player
         self.BASE_PO = 2            # initial PO of the player
@@ -54,7 +54,7 @@ class Player:
         # Rendering
         self.print_mode_active: bool = False
 
-        self.selected_spell: (None, Spell) = None       # current selected spell
+        self.selected_spell: Spell = None       # current selected spell
 
 # ======================================================================================================================
     # INITIALIZATION

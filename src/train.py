@@ -31,13 +31,15 @@ if __name__ == '__main__':
 
     agent2 = Agent(
         is_activated=True,
-        model_structure=[256, 128],
+        model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
     )
 
     env = Engine(MAP_NUMBER, [agent1, agent2])
 
+    last_loss1 = 0
+    last_loss2 = 0
     turns = []
     scores_1 = []
     scores_2 = []
@@ -74,13 +76,23 @@ if __name__ == '__main__':
         # ==============================================================================================================
         # TRAIN MODELS
         if i % MODULO_TRAIN == 0 and i != 0:
+            # -- train model on the memory
             loss1 = agent1.train_on_memory()
             loss2 = agent2.train_on_memory()
-
+            # -- set loss display to red if loss is increasing and to green if loss is decreasing
+            color1 = colorama.Fore.RED if last_loss1 < loss1 else colorama.Fore.GREEN
+            color2 = colorama.Fore.RED if last_loss2 < loss2 else colorama.Fore.GREEN
+            last_loss1 = loss1
+            last_loss2 = loss2
+            
+            # -- apply changes to epsilon on agents
             agent1.apply_epsilon_decay()
             agent2.apply_epsilon_decay()
 
-            print('P1 loss: %.2f' % loss1, '| epsilon %.2f' % agent1.epsilon, 'P1 loss: %.2f' % loss2, '| epsilon %.2f' % agent2.epsilon)
+            # -- display result of the training to the console  
+            print('P1 loss:', color1, '%.2f' % loss1, colorama.Fore.RESET, '| epsilon %.2f' % agent1.epsilon) 
+            print('P2 loss:', color2, '%.2f' % loss2, colorama.Fore.RESET, '| epsilon %.2f' % agent2.epsilon)
+            print('==============================================================================================================')
 
         # ==============================================================================================================
         # SAVE MODELS

@@ -13,7 +13,7 @@ import time
 
 
 class Engine(object):
-    MAX_TURN_GAME = 100
+    MAX_TURN_GAME = 50
 
     def __init__(self, map_number: int = 0, agents: list = [None, None]):
         self.__name__ = 'Engine'
@@ -25,12 +25,12 @@ class Engine(object):
         self.current_player: Player         = Player()
         self.agents: list                   = agents
 
-        self.actions: list = ActionList.get_actions()
-        self.n_actions: int = len(self.actions)
+        self.actions: list                  = ActionList.get_actions()
+        self.n_actions: int                 = len(self.actions)
 
-        self.turn: int = 1
+        self.turn: int                      = 1
 
-        self.model_dir = os.path.join(MODEL_DIR, self.name)
+        self.model_dir: str                 = os.path.join(MODEL_DIR, self.name)
         make_dir(self.model_dir)
 
 # ======================================================================================================================
@@ -127,18 +127,6 @@ class Engine(object):
         self.map.place_player(player)
         self.players.append(player)
 
-    def evaluate_next_rewards(self):
-        q_table = np.zeros(len(self.actions))
-        for i in range(len(self.actions)):
-            env = self.duplicate()
-            action = self.actions[i]
-
-            new_state, reward, done, continue_playing = env.step(action)
-
-            q_table[i] = reward
-
-        return q_table
-
 # ======================================================================================================================
     # TURN
     def end_turn(self):
@@ -192,7 +180,6 @@ class Engine(object):
 # ======================================================================================================================
     # MOVE
     def move_to_position(self, player, box_x, box_y):
-
         move_box_x = box_x - player.box_x
         move_box_y = box_y - player.box_y
         required_pm = abs(move_box_x) + abs(move_box_y)

@@ -31,7 +31,7 @@ class Agent:
         is_activated: bool = True,
         model_structure: list = [],
         input_dim: tuple = (),
-        model: (Model, None) = None,
+        model: Model = None,
         epochs=EPOCHS,
         lr=LR,
         batch_size=BATCH_SIZE,
@@ -105,13 +105,55 @@ class Agent:
 
         # Training loop
         for training_data in training_dataset:
-            loss = self.train_step(*training_data)
+            loss = self.train_step(*training_data)      # train model on batch of data
+            loss_array.append(loss)                     # add batch loss to loss array
+
+        return np.mean(loss_array)  # return mean of loss array
+
+    @tf.function
+    def train_step(self, current_states, next_states, action_tables, rewards, terminals):
+        """
+            train on a batch of data
+
+        :param: current_states : states at each step i
+        :param: next_states : new states after each action at step i
+        :param: action_tables : action taken at each step i (as True/False table)
+        :param: rewards : rewards won at each step i after action i
+        :param: terminals : is game done at each step (0: game done, 1: game continue)
+
+        :return: loss
+        """
+        q_current = self.model(current_states)   # Initialize the target q table with the current q table
+        q_next = self.model(next_states)         # Predict next q table
+
+        q_target = rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals
+        q_target = tf.tile(q_target[..., tf.newaxis], (1, self.n_actions))
+        q_target = tf.where(action_tables, q_target, q_current)
+
+        with tf.GradientTape() as tape:
+            q_current = self.model(current_states)
+            loss = self.loss_fn(q_current, q_target)
+
+        grads = tape.gradient(loss, self.model.trainable_weights)
+        self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
 
         return loss
 
+    def apply_epsilon_decay(self) -> None:
+        """ apply decay on epsilon or reset of epsilon """
+        # -- check if epsilon need to be reseted
+        if self.epsilon_reset > 0 \
+                and self.memory.mem_cnter % self.epsilon_reset == 0 \
+                and self.memory.mem_cnter > 0:
+
+            self.epsilon = self.epsilon_reset_value
+
+        else:
+            self.epsilon = max(self.epsilon_end, self.epsilon*self.epsilon_decay)
+            
     def choose_action(self, state, allow_random=True):
         """
-        Choose an action from an observation
+            Choose an action from a state
         """
         # -- choose random action (if random is allowed)
         if np.random.random() < self.epsilon and allow_random:
@@ -124,36 +166,6 @@ class Agent:
             action = np.argmax(action)
 
         return action
-
-    @tf.function
-    def train_step(self, current_state, next_state, action_table, rewards, terminals):
-
-        q_current = self.model(current_state)   # Initialize the target q table with the current q table
-        q_next = self.model(next_state)         # Predict next q table
-
-        q_target = rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals
-        q_target = tf.tile(q_target[..., tf.newaxis], (1, self.n_actions))
-        q_target = tf.where(action_table, q_target, q_current)
-
-        with tf.GradientTape() as tape:
-            q_current = self.model(current_state)
-            loss = self.loss_fn(q_current, q_target)
-
-        grads = tape.gradient(loss, self.model.trainable_weights)
-        self.optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
-
-        return loss
-
-    def apply_epsilon_decay(self):
-        # -- check if epsilon need to be reseted
-        if self.epsilon_reset > 0 \
-                and self.memory.mem_cnter % self.epsilon_reset == 0 \
-                and self.memory.mem_cnter > 0:
-
-            self.epsilon = self.epsilon_reset_value
-
-        else:
-            self.epsilon = max(self.epsilon_end, self.epsilon*self.epsilon_decay)
 
     def save_model(self):
         self.model.save(self.model_filename)
