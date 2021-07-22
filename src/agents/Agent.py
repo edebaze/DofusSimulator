@@ -97,6 +97,8 @@ class Agent:
         self.memory.store_transition(state, action_table, reward, new_state, done)
 
     def train_on_memory(self):
+        loss_array = []     # array of each batch loss used to calculate avg training loss
+        
         # Declare dataset
         training_dataset = tf.data.Dataset.from_tensor_slices(self.memory.get_buffer())
 
