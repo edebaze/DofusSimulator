@@ -13,16 +13,16 @@ import pdb
 
 class Agent:
     LR = 1e-3
-    BATCH_SIZE = 64
+    BATCH_SIZE = 256
 
-    MEM_SIZE = 10000  # size of the memory tables
+    MEM_SIZE = 1000  # size of the memory tables
     GAMMA = 0.99  # percentage of the past reward to add to the current reward in the Q-table
 
     EPSILON = 1  # percentage of chances to take a random action
     EPSILON_DECAY = 0.999  # decrease of epsilon at each predictions
     EPSILON_END = 1e-2  # min value of epsilon
     EPSILON_RESET = 10000  # reset epsilon each n predictions
-    EPSILON_RESET_VALUE = 0.2  # value of espilon when epsilon is reset
+    EPSILON_RESET_VALUE = 0.1 # value of espilon when epsilon is reset
 
     def __init__(
         self,
@@ -45,10 +45,12 @@ class Agent:
 
         self.is_activated: bool = is_activated  # is the agent auto playing or not
         self.input_dim: tuple = input_dim
-        self.memory = ReplayBuffer(mem_size=mem_size, input_dim=self.input_dim)
-
         self.actions = actions
         self.n_actions = len(actions)  # number of actions
+
+        self.memory = ReplayBuffer(mem_size=mem_size, input_dim=self.input_dim, n_actions = self.n_actions)
+
+        
 
         # Model description
         self.model_structure = model_structure  # structure of the model
@@ -61,8 +63,8 @@ class Agent:
        
 
         # Training hyperparameters
-        self.batch_size = 64
-        self.epoch = 10
+        self.batch_size = batch_size
+        self.epoch = 100
         self.lr = 1e-3
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
@@ -89,22 +91,23 @@ class Agent:
         model.compile(loss="mse", optimizer=Adam(learning_rate=self.lr))
         return model
 
-    def store_transition(self, state, action, reward, new_state, done):
+    def store_transition(self, state, action_table, reward, new_state, done):
         """
         Store state and results at index i
         """
-        self.memory.store_transition(state, action, reward, new_state, done)
+        self.memory.store_transition(state, action_table, reward, new_state, done)
 
     def train_on_memory(self):
         # Declare dataset
-        training_dataset = tf.data.Dataset.from_tensor_slices(*self.data)
-        training_dataset = training_dataset.repeat(self.epoch).shuffle().batch(
+        data = self.memory.get_buffer()
+        training_dataset = tf.data.Dataset.from_tensor_slices(self.memory.get_buffer())
+
+        training_dataset = training_dataset.repeat(self.epoch).shuffle(self.epoch).batch(
             self.batch_size).prefetch(tf.data.AUTOTUNE)
 
         # Training loop
         for training_data in training_dataset:
             loss = self.train_step(*training_data)
-            print('loss =', loss)
 
 
     def choose_action(self, state, allow_random=True):
@@ -134,17 +137,13 @@ class Agent:
         return action
 
     @tf.function
-    def train_step(self, current_state, next_state, actions, rewards, terminals):
+    def train_step(self, current_state, next_state, action_table, rewards, terminals):
 
-        q_target = self.model(
-            current_state
-        )  # Initialize the target q table with the current q table
+        q_current = self.model(current_state) # Initialize the target q table with the current q table
         q_next = self.model(next_state)  # Predict next q table
 
-        batch_index = tf.range(self.batch_size)
-        q_target[batch_index, actions] = (
-            rewards + self.gamma * tf.max(q_next, axis=1) * terminals
-        )
+        q_target = tf.tile((rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals)[..., tf.newaxis], (1, self.n_actions))
+        q_target = tf.where(action_table, q_target, q_current)
 
         with tf.GradientTape() as tape:
             q_current = self.model(current_state)

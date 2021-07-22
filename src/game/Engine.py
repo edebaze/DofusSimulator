@@ -164,16 +164,16 @@ class Engine(object):
             action = agent.choose_action(state)
 
         new_state, reward, done, continue_playing = self.step(action)
+        
+        action_table = np.zeros(self.n_actions).astype(np.bool) 
+        action_table[action] = True
         agent.store_transition(
             state=state,
-            action=action,
+            action_table=action_table,
             reward=reward,
             new_state=new_state,
             done=done
         )
-
-        # TODO : remove
-        agent.learn()
 
         if done:
             continue_playing = False
