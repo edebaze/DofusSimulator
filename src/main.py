@@ -13,7 +13,6 @@ if __name__ == '__main__':
         model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
-        model_file='../models/1626775126515631800/player_1.h5',
     )
 
     agent2 = Agent(
@@ -21,7 +20,6 @@ if __name__ == '__main__':
         model_structure=[256, 128],
         input_dim=state.shape,
         actions=env.actions,
-        model_file='../models/1626775126515631800/player_2.h5',
     )
 
     env = Engine(map_number=MAP_NUMBER, agents=[agent1, agent2])
