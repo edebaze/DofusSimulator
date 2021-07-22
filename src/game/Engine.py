@@ -47,7 +47,7 @@ class Engine(object):
         player_1 = self.players[0]
         player_2 = self.players[1]
 
-        return player_1.score, player_2.score, player_1.agent.epsilon, player_2.agent.epsilon
+        return player_1.score, player_2.score
 
 # ======================================================================================================================
     # ENV METHODS

@@ -12,6 +12,7 @@ import pdb
 
 
 class Agent:
+    EPOCHS = 100
     LR = 1e-3
     BATCH_SIZE = 256
 
@@ -31,6 +32,8 @@ class Agent:
         model_structure: list = [],
         input_dim: tuple = (),
         model: (Model, None) = None,
+        epochs=EPOCHS,
+        lr=LR,
         batch_size=BATCH_SIZE,
         gamma=GAMMA,
         epsilon=EPSILON,
@@ -38,34 +41,30 @@ class Agent:
         epsilon_end=EPSILON_END,
         epsilon_reset=EPSILON_RESET,
         epsilon_reset_value=EPSILON_RESET_VALUE,
-        lr=LR,
         mem_size=MEM_SIZE,
         model_filename="model.h5",
     ):
 
         self.is_activated: bool = is_activated  # is the agent auto playing or not
-        self.input_dim: tuple = input_dim
-        self.actions = actions
-        self.n_actions = len(actions)  # number of actions
+        self.input_dim: tuple = input_dim       # dimension of the input data
+        self.actions = actions                  # array of actions that can be taken
+        self.n_actions = len(actions)           # number of actions
 
         self.memory = ReplayBuffer(mem_size=mem_size, input_dim=self.input_dim, n_actions = self.n_actions)
 
-        
-
         # Model description
         self.model_structure = model_structure  # structure of the model
-        self.gamma = gamma  # percentage of the past reward to add to the current reward in the Q-table
-        self.epsilon = epsilon  # percentage of chances to take a random action
-        self.epsilon_decay = epsilon_decay  # decrease of epsilon at each predictions
-        self.epsilon_end = epsilon_end  # min value of epsilon
-        self.epsilon_reset = epsilon_reset  # reset epsilon each n values
+        self.gamma = gamma                      # percentage of the past reward to add to the current reward in the Q-table
+        self.epsilon = epsilon                  # percentage of chances to take a random action
+        self.epsilon_decay = epsilon_decay      # decrease of epsilon at each predictions
+        self.epsilon_end = epsilon_end          # min value of epsilon
+        self.epsilon_reset = epsilon_reset      # reset epsilon each n values
         self.epsilon_reset_value = epsilon_reset_value  # value of espilon when epsilon is reset
-       
 
         # Training hyperparameters
         self.batch_size = batch_size
-        self.epoch = 100
-        self.lr = 1e-3
+        self.epoch = epochs
+        self.lr = lr
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
 
@@ -99,7 +98,6 @@ class Agent:
 
     def train_on_memory(self):
         # Declare dataset
-        data = self.memory.get_buffer()
         training_dataset = tf.data.Dataset.from_tensor_slices(self.memory.get_buffer())
 
         training_dataset = training_dataset.repeat(self.epoch).shuffle(self.epoch).batch(
@@ -130,10 +128,11 @@ class Agent:
     @tf.function
     def train_step(self, current_state, next_state, action_table, rewards, terminals):
 
-        q_current = self.model(current_state) # Initialize the target q table with the current q table
-        q_next = self.model(next_state)  # Predict next q table
+        q_current = self.model(current_state)   # Initialize the target q table with the current q table
+        q_next = self.model(next_state)         # Predict next q table
 
-        q_target = tf.tile((rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals)[..., tf.newaxis], (1, self.n_actions))
+        q_target = rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals
+        q_target = tf.tile(q_target[..., tf.newaxis], (1, self.n_actions))
         q_target = tf.where(action_table, q_target, q_current)
 
         with tf.GradientTape() as tape:

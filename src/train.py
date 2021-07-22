@@ -8,9 +8,10 @@ import pandas as pd
 import numpy as np
 
 NUM_GAMES = 500000
-MODULO_WATCH = 500
-MODULO_SAVE = 50
-NUM_SHOW_GAMES = 0
+MODULO_TRAIN = 10           # train bot each N games
+MODULO_WATCH = 500          # watch bots on GUI each N games
+MODULO_SAVE = 50            # save models each N games
+NUM_SHOW_GAMES = 0          # number of games to play (by the user) before training to start generating training data
 
 MAP_NUMBER = 1
 
@@ -21,15 +22,11 @@ if __name__ == '__main__':
     env = Engine(MAP_NUMBER)
     state = env.reset()
 
-    # model_dir = ''
-    model_dir = '../models/1626798305425235100/'
-
     agent1 = Agent(
         is_activated=True,
         model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
-        model_file=model_dir + 'player_1.h5',
     )
 
     agent2 = Agent(
@@ -37,15 +34,11 @@ if __name__ == '__main__':
         model_structure=[256, 128],
         input_dim=state.shape,
         actions=env.actions,
-        model_file=model_dir + 'player_2.h5',
     )
-
-    if model_dir is not None:
-        agent1.load_model()
-        agent2.load_model()
 
     env = Engine(MAP_NUMBER, [agent1, agent2])
 
+    turns = []
     scores_1 = []
     scores_2 = []
 
@@ -108,7 +101,7 @@ if __name__ == '__main__':
                 data['model_file'] = agent.model_file
                 data['score'] = score_1 if player.index == 0 else score_2
                 data['avg_score'] = avg_score_1 if player.index == 0 else avg_score_2
-                data['epsilon'] = epsilon_1 if player.index == 0 else epsilon_2
+                data['epsilon'] = agent1.epsilon if player.index == 0 else agent2.epsilon
 
                 # -- env
                 data['turn'] = env.turn
