@@ -76,6 +76,10 @@ if __name__ == '__main__':
 
         print('episode:', i, 'turns:', env.turn, '| P1 score ', score_1, '| avg_score %.2f' % avg_score_1, '| epsilon %.2f' % epsilon_1, '|| P2 score %.2f' % score_2, '| avg_score %.2f' % avg_score_2, '| epsilon %.2f' % epsilon_2)
 
+
+        if i % 10 == 0 and i != 0:
+            agent1.train_on_memory() 
+            agent2.train_on_memory()
         # ==============================================================================================================
         # SAVE MODELS
         if i % MODULO_SAVE and i != 0:
