@@ -42,8 +42,10 @@ class ReplayBuffer:
         self.mem_cnter += 1
 
     def get_buffer(self):
-        return (tf.cast(self.state_memory, tf.float32), 
-            tf.cast(self.new_state_memory, tf.float32), 
-            tf.cast(self.action_table_memory, tf.bool), 
-            tf.cast(self.reward_memory, tf.float32), 
-            tf.cast(self.terminal_memory, tf.float32))
+        k = min(self.mem_cnter, self.mem_size)
+
+        return (tf.cast(self.state_memory[:k], tf.float32), 
+            tf.cast(self.new_state_memory[:k], tf.float32), 
+            tf.cast(self.action_table_memory[:k], tf.bool), 
+            tf.cast(self.reward_memory[:k], tf.float32), 
+            tf.cast(self.terminal_memory[:k], tf.float32))
