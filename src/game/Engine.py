@@ -139,6 +139,8 @@ class Engine(object):
 # ======================================================================================================================
     # TURN
     def end_turn(self):
+        if self.get_done():
+            return
         self.turn += 1
         self.next_player()
 
