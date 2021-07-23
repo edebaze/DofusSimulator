@@ -16,14 +16,14 @@ class Agent:
     LR = 3e-4
     BATCH_SIZE = 128
 
-    MEM_SIZE = 1e6  # size of the memory tables
-    GAMMA = 0.99  # percentage of the past reward to add to the current reward in the Q-table
+    MEM_SIZE = 1e6              # size of the memory tables
+    GAMMA = 0.9                 # percentage of the past reward to add to the current reward in the Q-table
 
-    EPSILON = 1  # percentage of chances to take a random action
-    EPSILON_DECAY = 0.9  # decrease of epsilon at each predictions
-    EPSILON_END = 1e-2  # min value of epsilon
-    EPSILON_RESET = 1e6  # reset epsilon each n predictions
-    EPSILON_RESET_VALUE = 0.1 # value of espilon when epsilon is reset
+    EPSILON = 1                 # percentage of chances to take a random action
+    EPSILON_DECAY = 0.9         # decrease of epsilon at each predictions
+    EPSILON_END = 1e-2          # min value of epsilon
+    EPSILON_RESET = 50000       # reset epsilon each n predictions
+    EPSILON_RESET_VALUE = 0.3   # value of espilon when epsilon is reset
 
     def __init__(
         self,
