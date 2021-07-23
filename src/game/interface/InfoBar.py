@@ -26,7 +26,7 @@ class InfoBar:
         self.X_IMG_MAX = self.X_IMG_MIN + self.NUM_SPELL_IMG_BY_ROW * self.SPELL_IMG_DIM
         self.Y_IMG_MAX = self.Y_IMG_MIN + self.NUM_SPELL_ROWS * self.SPELL_IMG_DIM
 
-        self.tk_portrait_img: (None, ImageTk.PhotoImage) = None
+        self.tk_portrait_img: ImageTk.PhotoImage = None
         self.portrait_label = None
         self.hp_label = None
         self.pa_label = None

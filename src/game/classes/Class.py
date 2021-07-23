@@ -1,8 +1,9 @@
+from globals.path import *
 from game.spells import SpellList, Spell
 
 
 class Class:
-    IMG_DIR = '../images/class'
+    IMG_DIR = IMAGE_DIR.replace('\\', '/') + '/class'
 
     def __init__(self, name):
         self.name: str = name               # name of the class

@@ -1,8 +1,9 @@
+from globals.path import IMAGE_DIR
 import random
 
 
 class Spell:
-    IMG_DIR = '../images/spells'
+    IMG_DIR = IMAGE_DIR.replace('\\', '/') + '/spells'
 
     def __init__(self):
         self.name: str = ''

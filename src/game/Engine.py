@@ -121,7 +121,7 @@ class Engine(object):
         agent = self.agents[index_player]
 
         if agent is not None:
-            agent.model_file = os.path.join(self.model_dir, f'player_{index_player+1}.h5')
+            agent.model_filename = os.path.join(self.model_dir, f'player_{index_player+1}.h5')
 
         player_name = 'Player ' + str(index_player+1)
 
