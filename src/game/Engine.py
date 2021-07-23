@@ -174,9 +174,6 @@ class Engine(object):
             done=done
         )
 
-        if done:
-            continue_playing = False
-
         return continue_playing
 
 # ======================================================================================================================
