@@ -64,8 +64,17 @@ class Engine(object):
 
         (state, reward, done) = (self.get_state(), self.get_reward(), self.get_done())
 
+        # if game over
         if done:
+            # -- stop continue playing
             continue_playing = False
+            
+            # -- if game has stopped because the max turn was reached
+            if self.turn >= self.MAX_TURN_GAME:
+                # -- add max turn reward to the current reward and all players total score
+                reward += RewardList.REACH_MAX_TURN
+                for player in self.players:
+                    player.score += RewardList.REACH_MAX_TURN
 
         return state, reward, done, continue_playing
 

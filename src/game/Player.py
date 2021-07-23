@@ -62,7 +62,6 @@ class Player:
         """
             activate player
         """
-        self.reward += RewardList.ROUND_START   # remove reward at the beginning of a round
         self.last_action = ActionList.END_TURN  # reset last action taken this turn
         self.is_current_player = True           # set as current player this turn
         return
@@ -71,8 +70,11 @@ class Player:
         """
             deactivate player when his turn ends
         """
+        if self.is_current_player:
+            self.reward += RewardList.ROUND_START   # remove reward at the end of a round
+            self.is_current_player = False          # remove as current player
+
         self.new_turn()
-        self.is_current_player = False      # remove as current player
         self.deselect_spell()
 
     def new_turn(self):
