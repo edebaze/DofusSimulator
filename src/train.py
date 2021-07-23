@@ -10,7 +10,7 @@ import numpy as np
 NUM_GAMES = 500000
 MODULO_TRAIN = 10           # train bot each N games
 MODULO_WATCH = 500          # watch bots on GUI each N games
-MODULO_SAVE = 50            # save models each N games
+MODULO_SAVE = 200           # save models each N games
 NUM_SHOW_GAMES = 0          # number of games to play (by the user) before training to start generating training data
 
 MAP_NUMBER = 1
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         avg_score_1 = np.mean(scores_1[-100:])
         avg_score_2 = np.mean(scores_2[-100:])
 
-        print('episode:', i, 'turns:', env.turn, 'turns:', env.turn, 'avg_turns: %.2f' % avg_turn, '| P1 score ', score_1, '| avg_score %.2f' % avg_score_1, '|| P2 score %.2f' % score_2, '| avg_score %.2f' % avg_score_2)
+        print('episode:', i, 'turns:', env.turn, 'avg_turns: %.2f' % avg_turn, '| P1 score ', score_1, '| avg_score %.2f' % avg_score_1, '|| P2 score %.2f' % score_2, '| avg_score %.2f' % avg_score_2)
 
         # ==============================================================================================================
         # TRAIN MODELS
@@ -96,31 +96,31 @@ if __name__ == '__main__':
 
         # ==============================================================================================================
         # SAVE MODELS
-        if i % MODULO_SAVE and i != 0:
-            if os.path.isfile(MODEL_EXCEL_FILE):
-                excel_content = pd.read_excel(MODEL_EXCEL_FILE)
-            else:
-                excel_content = pd.DataFrame()
+        if i % MODULO_SAVE == 0 and i != 0:
+            # if os.path.isfile(MODEL_EXCEL_FILE):
+            #     excel_content = pd.read_excel(MODEL_EXCEL_FILE)
+            # else:
+            #     excel_content = pd.DataFrame()
 
             for player in env.players:
                 agent = player.agent
                 agent.save_model()
 
-                # SAVE EXCEL
-                data = dict()
+                # # SAVE EXCEL
+                # data = dict()
 
-                # -- score
-                data['model_file'] = agent.model_file
-                data['score'] = score_1 if player.index == 0 else score_2
-                data['avg_score'] = avg_score_1 if player.index == 0 else avg_score_2
-                data['epsilon'] = agent1.epsilon if player.index == 0 else agent2.epsilon
+                # # -- score
+                # data['model_filename'] = agent.model_filename
+                # data['score'] = score_1 if player.index == 0 else score_2
+                # data['avg_score'] = avg_score_1 if player.index == 0 else avg_score_2
+                # data['epsilon'] = agent1.epsilon if player.index == 0 else agent2.epsilon
 
-                # -- env
-                data['turn'] = env.turn
-                data['actions'] = str(env.actions)
+                # # -- env
+                # data['turn'] = env.turn
+                # data['actions'] = str(env.actions)
 
-                df = pd.Series(data)
-                excel_content = pd.concat([excel_content, df.T])
+                # df = pd.Series(data)
+                # excel_content = pd.concat([excel_content, df.T])
 
             # excel_content.to_excel(MODEL_EXCEL_FILE)
 
