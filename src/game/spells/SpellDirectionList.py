@@ -50,3 +50,16 @@ class SpellDirectionList:
            print('Unkown direction', direction)
 
         return spell_matrix
+
+    @staticmethod
+    def get_direction_x_y(box_x: int, box_y: int, box_x_player: int, box_y_player: int) -> tuple:
+        if box_x > box_x_player:
+            return 1, 0
+        elif box_x < box_x_player:
+            return -1, 0
+        elif box_y > box_y_player:
+            return 0, 1
+        elif box_y < box_y_player:
+            return 0, -1
+        else:
+            return 0, 0
