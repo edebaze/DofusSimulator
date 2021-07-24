@@ -13,6 +13,7 @@ if __name__ == '__main__':
         model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
+        mem_size=1
     )
 
     agent2 = Agent(
@@ -20,6 +21,7 @@ if __name__ == '__main__':
         model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
+        mem_size=1
     )
 
     env = Engine(map_number=MAP_NUMBER, agents=[agent1, agent2])
