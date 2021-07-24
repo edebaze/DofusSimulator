@@ -23,7 +23,7 @@ class ClassList:
             class_.add_spells([
                 SpellList.FLECHE_MAGIQUE,
                 SpellList.FLECHE_ENFLAMMEE,
-                SpellList.FLECHE_GLACEE,
+                SpellList.FLECHE_DE_RECULE,
             ])
 
         else:
