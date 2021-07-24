@@ -446,6 +446,9 @@ class Engine(object):
         elif action == ActionList.CAST_SPELL_3:
             self.auto_cast_spell(3)
 
+        elif action == ActionList.CAST_SPELL_4:
+            self.auto_cast_spell(4)
+
         else:
             print(f'Unkown action {action}')
 
