@@ -412,6 +412,7 @@ class Engine(object):
         :return: bool -> continue playing or not
         """
         player = self.current_player
+        self.deselect_spell()               # deselect current spell if any
 
         player.last_action = action
         player.num_actions_in_turn += 1  # increase number of actions taken in the turn (by the agent)
