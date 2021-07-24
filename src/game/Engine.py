@@ -323,12 +323,11 @@ class Engine(object):
 
         # =================================================================================
         # CHECK IS IN MAP
-        if not (self.map.BOX_WIDTH > box_x >= 0 and self.map.BOX_HEIGHT > box_y >= 0):
+        box_content = self.map.box_content(box_x, box_y)
+        if box_content is None:
             player.print('OUTSIDE THE MAP')
             self.deselect_spell()
             return
-
-        box_content = self.map.box_content(box_x, box_y)
 
         # =================================================================================
         # CHECK IS IN PO
