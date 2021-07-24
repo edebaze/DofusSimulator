@@ -15,7 +15,7 @@ import time
 class Engine(object):
     MAX_TURN_GAME = 50
 
-    def __init__(self, map_number: int = 0, agents: list = [None, None]):
+    def __init__(self, map_number: int = 0, agents: list = [None, None], flag_create_dir: bool = True):
         self.__name__ = 'Engine'
         self.name                           = self.create_name()
         self.map_number: int                = map_number
@@ -31,7 +31,9 @@ class Engine(object):
         self.turn: int                      = 1
 
         self.model_dir: str                 = os.path.join(MODEL_DIR, self.name)
-        make_dir(self.model_dir)
+
+        if flag_create_dir:
+            make_dir(self.model_dir)
 
 # ======================================================================================================================
     def play_game(self):
