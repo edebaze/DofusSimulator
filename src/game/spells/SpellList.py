@@ -17,9 +17,12 @@ class SpellList:
     FLECHE_MAGIQUE = 201
     FLECHE_ENFLAMMEE = 202
     FLECHE_GLACEE = 203
+    FLECHE_DE_RECULE = 204
 
     @staticmethod
     def get(spell_id) -> (None, Spell):
+        # ===================================================================
+        # CLASSIC SPELLS ====================================================
         if spell_id == SpellList.OS:
             spell = Spell()
             spell.name = 'os'
@@ -43,6 +46,8 @@ class SpellList:
             spell.min_damage = 25
             spell.is_po_mutable = False
 
+        # ===============================================================
+        # IOP SPELLS ====================================================
         elif spell_id == SpellList.PRESSION:
             spell = Spell()
             spell.name = 'pression'
@@ -78,6 +83,8 @@ class SpellList:
             spell.max_damage = 25
             spell.min_damage = 10
 
+        # ===============================================================
+        # CRA SPELLS ====================================================
         elif spell_id == SpellList.FLECHE_MAGIQUE:
             spell = Spell()
             spell.name = 'fleche magique'
@@ -114,6 +121,20 @@ class SpellList:
             spell.max_damage = 3
             spell.min_damage = 1
             spell.pa_retreat = 1
+
+        elif spell_id == SpellList.FLECHE_DE_RECULE:
+            spell = Spell()
+            spell.name = 'fleche de recule'
+            spell.id = spell_id
+            spell.img = Spell.IMG_DIR + '/fleche_de_recule.jpg'
+            spell.pa = 4
+            spell.min_po = 2
+            spell.max_po = 5
+            spell.elem = Spell.ELEMENT_AIR
+            spell.max_damage = 10
+            spell.min_damage = 1
+            spell.bump = 4
+            spell.is_line = True
 
         else:
             print('Unknown spell', spell_id)

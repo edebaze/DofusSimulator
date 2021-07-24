@@ -12,6 +12,7 @@ class Spell:
     ELEMENT_AIR = 'air'
     ELEMENT_WATER = 'water'
     ELEMENT_EARTH = 'earth'
+    ELEMENT_BUMP = 'bump'
 
     ZONE_NONE = 0
     ZONE_ITEM = 1
