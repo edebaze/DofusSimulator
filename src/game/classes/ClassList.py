@@ -13,15 +13,17 @@ class ClassList:
             class_.img_path = Class.IMG_DIR + '/iop.png'
             class_.add_spells([
                 SpellList.PRESSION,
-                SpellList.FLECHE_MAGIQUE,
+                SpellList.TEMPETE_DE_PUISSANCE,
+                SpellList.MARTEAU_DE_MOON,
             ])
 
         elif class_name == ClassList.CRA:
             class_ = Class(class_name)
             class_.img_path = Class.IMG_DIR + '/cra.jpeg'
             class_.add_spells([
-                SpellList.PRESSION,
                 SpellList.FLECHE_MAGIQUE,
+                SpellList.FLECHE_ENFLAMMEE,
+                SpellList.FLECHE_GLACEE,
             ])
 
         else:
