@@ -244,15 +244,17 @@ class Map:
             if not skip:
                 for _ in range(2 * n_box_row + 1):
                     skip = False
-                    # -- do not create mask outside map
-                    if not self.BOX_WIDTH > x >= 0:
+                    # -- block, void or outside the map
+                    box_content = self.box_content(x, y)
+                    if box_content is None:  # check is in map
+                        skip = True
+                    elif box_content[self.item_block_index] == 1:  # check is block
+                        skip = True
+                    elif box_content[self.item_void_index] == 1:  # check is void
                         skip = True
 
                     # -- do not create mask in MIN PO
-                    if abs(y - n_box_max) + abs(x - n_box_row) < n_box_min:
-                        skip = True
-
-                    if not self.is_empty(x, y):
+                    if abs(y - box_y) + abs(x - box_x) < n_box_min:
                         skip = True
 
                     if not skip:
@@ -260,10 +262,10 @@ class Map:
 
                     x += 1
 
-            if x > box_x + n_box_max:
-                n_box_row -= 1  # decrease number of boxes by row if row is above half number of rows
+            if y == box_y - 1:
+                n_box_row = n_box_max  # decrease number of boxes by row if row is above half number of rows
             else:
-                n_box_row += 1  # increase number of boxes by row
+                n_box_row = 0  # increase number of boxes by row
 
             y += 1
 
