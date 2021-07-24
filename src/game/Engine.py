@@ -1,4 +1,6 @@
 from globals import *
+
+from game.spells import Spell
 from agents.config.RewardList import RewardList
 from game.map import Map, MapItemList
 from game.Player import Player
@@ -55,8 +57,8 @@ class Engine(object):
     # ENV METHODS
     def reset(self):
         self.turn = 1
-        self.create_players()
         self.map.create()
+        self.create_players()
         return self.get_state()
 
     def step(self, action):
@@ -83,7 +85,7 @@ class Engine(object):
 # ======================================================================================================================
     # ENV SUB_METHODS
     def get_state(self) -> np.ndarray:
-        state = copy.copy(self.map.matrix).reshape(self.map.matrix.shape[0] * self.map.matrix.shape[1])
+        state = copy.copy(self.map.matrix).reshape(self.map.matrix.shape[0] * self.map.matrix.shape[1] * self.map.matrix.shape[2])
         state = np.concatenate([state, self.get_players_state()])
         return state
 
@@ -116,6 +118,7 @@ class Engine(object):
         # -- set first player as current player
         self.current_player = self.players[0]
         self.current_player.activate()
+        self.map.create_player_mask_pm(self.current_player)
 
     def add_player(self, team, class_name=ClassList.IOP):
         index_player = len(self.players)
@@ -135,7 +138,7 @@ class Engine(object):
         player.team = team
         player.box_x = box_x
         player.box_y = box_y
-        self.map.place_player(player)
+        self.map.place_player(player, flag_set_mask_pm=False)
         self.players.append(player)
 
 # ======================================================================================================================
@@ -149,13 +152,15 @@ class Engine(object):
     def next_player(self):
         print(colorama.Fore.RESET, end='')
         current_player_index = (self.current_player.index + 1) % self.num_players
-        self.current_player = self.players[current_player_index]
 
-        for player in self.players:
-            if player.index == self.current_player.index:
-                player.activate()
-            else:
-                player.deactivate()
+        # -- deactivate current player
+        self.current_player.deactivate()
+        self.map.remove_player_mask_pm()    # remove current mask pm
+
+        # -- activate new current player
+        self.current_player = self.players[current_player_index]
+        self.current_player.activate()
+        self.map.create_player_mask_pm(self.current_player)
 
     def play_action(self, action=None):
         agent = self.current_player.agent
@@ -183,7 +188,6 @@ class Engine(object):
     @property
     def num_players(self):
         return len(self.players)
-
 
 # ======================================================================================================================
     # PLAYER ACTIONS
@@ -264,17 +268,28 @@ class Engine(object):
 
 # ======================================================================================================================
     # SPELLS
+    def select_spell(self, spell: Spell):
+        player = self.current_player
+        player.select_spell(spell)
+        self.map.create_spell_mask(player, spell)
+
+    # __________________________________________________________________________________________________________________
+    def deselect_spell(self):
+        self.current_player.deselect_spell()
+        self.map.remove_mask(MapItemList.MASK_SPELL)
+
+    # __________________________________________________________________________________________________________________
     def auto_cast_spell(self, spell_index):
         """ select a spell and cast it. If player is in range attack him otherwise cast in the void """
 
         player = self.current_player
 
         spell = player.class_.spells[spell_index]
-        player.select_spell(spell.type)
+        self.select_spell(spell)
         if player.selected_spell is None:
             return
 
-        po = spell.po + int(spell.is_po_mutable) * player.po
+        po = spell.max_po + int(spell.is_po_mutable) * player.po
 
         # =================================================================================
         # CHECK IF PLAYER IS IN RANGE
@@ -292,7 +307,7 @@ class Engine(object):
                 player.print(f'{spell.name} CASTED ON NOTHING')
 
         player.pa -= player.selected_spell.pa   # use PA
-        player.deselect_spell()
+        self.deselect_spell()
 
     # __________________________________________________________________________________________________________________
     def cast_spell(self, box_x, box_y):
@@ -310,48 +325,50 @@ class Engine(object):
         # CHECK IS IN MAP
         if not (self.map.BOX_WIDTH > box_x >= 0 and self.map.BOX_HEIGHT > box_y >= 0):
             player.print('OUTSIDE THE MAP')
-            player.deselect_spell()
+            self.deselect_spell()
             return
+
+        box_content = self.map.box_content(box_x, box_y)
 
         # =================================================================================
         # CHECK IS IN PO
-        po = spell.po + int(spell.is_po_mutable) * player.po
-        num_box = abs(player.box_x - box_x) + abs(player.box_y - box_y)
-        if num_box > po:
+        index_spell_mask = self.map.item_values.index(MapItemList.MASK_SPELL)
+        if box_content[index_spell_mask] == 0:
             player.print('SPELL OUT OF PO RANGE')
-            player.deselect_spell()
-            return
-
-        box_content = self.map.box(box_x, box_y)
-
-        # =================================================================================
-        # CHECK OTHER PLAYERS
-        if box_content > MapItemList.PLAYER_1:
-            for targeted_player in self.players:
-                if targeted_player.item_value == box_content:
-                    player.hit(targeted_player)
-
-        # =================================================================================
-        # CHECK VOID
-        elif box_content == MapItemList.VOID:
-            player.print('HIT VOID')
-            player.deselect_spell()
-            return
-
-        # =================================================================================
-        # CHECK BLOCK
-        elif box_content == MapItemList.BLOCK:
-            player.print('HIT BLOCK')
-            player.deselect_spell()
+            self.deselect_spell()
             return
 
         # =================================================================================
         # CHECK EMPTY
-        elif box_content == MapItemList.EMPTY:
+        elif box_content[self.map.item_empty_index] == 1:
             player.print('HIT EMPTY CASE')
 
+        # =================================================================================
+        # CHECK VOID
+        elif box_content[self.map.item_void_index] == 1:
+            player.print('HIT VOID')
+            self.deselect_spell()
+            return
+
+        # =================================================================================
+        # CHECK BLOCK
+        elif box_content[self.map.item_block_index] == 1:
+            player.print('HIT BLOCK')
+            self.deselect_spell()
+            return
+
+        # =================================================================================
+        # CHECK OTHER PLAYERS
+        for index_player in range(len(MapItemList.PLAYERS)):
+            item_value = MapItemList.PLAYERS[index_player]          # get player item_value
+            item_index = self.map.item_values.index(item_value)     # get index value of player
+            # -- if player is in box_content
+            if box_content[item_index] == 1:
+                targeted_player = self.players[index_player]
+                player.hit(targeted_player)
+
         player.pa -= spell.pa  # use PA
-        player.deselect_spell()
+        self.deselect_spell()
 
 # ======================================================================================================================
     # UTILITY
