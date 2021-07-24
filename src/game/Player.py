@@ -96,10 +96,9 @@ class Player:
 
 # ======================================================================================================================
     # ACTIONS
-    def select_spell(self, spell_type: int):
+    def select_spell(self, spell: Spell):
         self.deselect_spell()
 
-        spell = SpellList.get(spell_type)
         if self.pa - spell.pa < 0:
             self.print(f"CAN'T SELECT SPELL {spell.name}")
             self.reward += RewardList.BAD_SPELL_SELECTION
