@@ -1,6 +1,6 @@
 from globals import *
 
-from game.spells import Spell
+from game.spells import Spell, SpellDirectionList
 from agents.config.RewardList import RewardList
 from game.map import Map, MapItemList
 from game.Player import Player
@@ -364,10 +364,50 @@ class Engine(object):
             # -- if player is in box_content
             if box_content[item_index] == 1:
                 targeted_player = self.players[index_player]
-                player.hit(targeted_player)
+                self.hit(targeted_player, self.current_player.selected_spell)
 
         player.pa -= spell.pa  # use PA
         self.deselect_spell()
+
+    def hit(self, player: Player, spell: Spell):
+        """
+            current player is hitting an other player with current selected spell
+        :param player:
+        :return:
+        """
+        # -- if targeted player is already dead, nothing to do
+        if player.is_dead:
+            return
+
+        # -- set true damages
+        damages = player.get_hit(spell.damages(), spell.elem)
+        # -- add bump damages
+        bumb_x, bumb_y = SpellDirectionList.get_direction_x_y(player.box_x, player.box_y, self.current_player.box_x, self.current_player.box_y)
+        for i in range(spell.bump):
+            if not self.map.is_empty(player.box_x + bumb_x, player.box_y + bumb_y):
+                bumb_damages = (spell.bump - i) * 10
+                damages += player.get_hit(bumb_damages, Spell.ELEMENT_BUMP)
+                break
+            player.box_x += bumb_x
+            player.box_y += bumb_y
+            self.map.place_player(player, flag_set_mask_pm=False)
+
+        self.current_player.print(f'{spell.name}: {damages} hp')
+
+        # update reward if player is not an ally
+        if player.team != self.current_player.team:
+            self.current_player.reward += damages * RewardList.DAMAGES
+        else:
+            self.current_player.reward -= damages * RewardList.DAMAGES  # negative reward for friendly fire
+
+        # -- if targeted player is dead
+        if player.is_dead:
+            if player.team != self.current_player.team:
+                self.current_player.reward += RewardList.KILL  # positive reward if not ally
+            else:
+                self.current_player.reward -= RewardList.KILL  # negative reward if ally
+
+        return damages
 
 # ======================================================================================================================
     # UTILITY

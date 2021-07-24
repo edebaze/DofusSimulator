@@ -122,12 +122,11 @@ class Player:
         if player.is_dead:
             return
 
-        damages = self.selected_spell.damages()
-        self.print(f'{self.selected_spell.name}: {damages} hp')
-
         player_prev_hp = player.hp
-        player.get_hit(damages)
+        player.get_hit(self.selected_spell)
         true_damages = player_prev_hp - player.hp
+
+        self.print(f'{self.selected_spell.name}: {true_damages} hp')
 
         # update reward if player is not an ally
         if player.team != self.team:
@@ -143,10 +142,11 @@ class Player:
                 self.reward -= RewardList.KILL     # negative reward if ally
 
     # __________________________________________________________________________________________________________________
-    def get_hit(self, damages: int):
+    def get_hit(self, damages: int, elem: str):
         """
-            get hit with some damages
-        :param damages:
+            get hit with a spell
+        :param damages: number of damage to inflict
+        :param elem: elem of damages
         :return:
         """
 
@@ -159,6 +159,8 @@ class Player:
 
         if self.hp <= 0 and not self.is_dead:
             self.die()
+
+        return true_damages
 
     # __________________________________________________________________________________________________________________
     def die(self):
