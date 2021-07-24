@@ -73,9 +73,9 @@ class SpellList:
             spell.id = spell_id
             spell.img = Spell.IMG_DIR + '/marteau_de_moon.jpeg'
             spell.pa = 5
-            spell.min_po = 8
-            spell.max_po = 6
-            spell.max_damage = 10
+            spell.min_po = 4
+            spell.max_po = 5
+            spell.max_damage = 25
             spell.min_damage = 10
 
         elif spell_id == SpellList.FLECHE_MAGIQUE:
