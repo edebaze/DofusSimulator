@@ -174,6 +174,7 @@ class Map:
         :param n_box_min: min size of the mask
         :return:
         """
+
         item_index = self.item_values.index(item_value)
         y = box_y - n_box_max
 
@@ -190,7 +191,7 @@ class Map:
             if not skip:
                 for _ in range(2 * n_box_row + 1):
                     skip = False
-                    # -- block, void our outside the map
+                    # -- block, void or outside the map
                     box_content = self.box_content(x, y)
                     if box_content is None:         # check is in map
                         skip = True
@@ -208,14 +209,12 @@ class Map:
 
                     x += 1
 
-            if x > box_x + n_box_max:
+            if y >= box_y:
                 n_box_row -= 1  # decrease number of boxes by row if row is above half number of rows
             else:
                 n_box_row += 1  # increase number of boxes by row
 
             y += 1
-
-        # self.show_mask(item_value)    # TODO : remove (debug)
 
     # __________________________________________________________________________________________________________________
     def create_mask_line(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0):
@@ -267,8 +266,6 @@ class Map:
                 n_box_row += 1  # increase number of boxes by row
 
             y += 1
-
-        # self.show_mask(item_value)    # TODO : remove (debug)
 
     # __________________________________________________________________________________________________________________
     def remove_mask(self, item_value):
