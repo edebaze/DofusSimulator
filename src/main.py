@@ -5,7 +5,7 @@ from agents import Agent
 MAP_NUMBER = 1
 
 if __name__ == '__main__':
-    env = Engine(map_number=MAP_NUMBER)
+    env = Engine(map_number=MAP_NUMBER, flag_create_dir=False)
     state = env.reset()
 
     agent1 = Agent(
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     agent2 = Agent(
         is_activated=True,
-        model_structure=[256, 128],
+        model_structure=[512, 512, 256, 256],
         input_dim=state.shape,
         actions=env.actions,
     )
