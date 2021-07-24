@@ -10,6 +10,7 @@ class ActionList:
     CAST_SPELL_1: int   = 5
     CAST_SPELL_2: int   = 6
     CAST_SPELL_3: int   = 7
+    CAST_SPELL_4: int   = 8
 
     @staticmethod
     def get_actions():
