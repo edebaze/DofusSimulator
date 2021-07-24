@@ -420,7 +420,7 @@ class Map:
 
         h = len(map)
         w = len(map[0])
-        new_map = np.zeros((w, h, len(item_values)))
+        new_map = np.zeros((h, w, len(item_values)))
 
         for i in range(len(map)):
             row = map[i]
