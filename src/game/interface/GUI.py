@@ -68,10 +68,11 @@ class GUI:
         print(f'PLAYER 2 score : {player_2.score}')
 
     def update(self):
-        player = self.engine.current_player
-
         # RENDERING
-        self.display_move(player)
+        for player in self.engine.players:
+            self.display_move(player)
+
+        player = self.engine.current_player
         self.info_bar.set_hp(player.hp)
         self.info_bar.set_pa(player.pa)
         self.info_bar.set_pm(player.pm)
@@ -296,7 +297,7 @@ class GUI:
         self.info_bar.set_hp(self.engine.current_player.hp)     # refresh HP
         self.deselect_spell()
 
-        self.root.update()
+        self.update()
 
 # ======================================================================================================================
     # PLAYER FUNCTIONS
