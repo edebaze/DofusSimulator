@@ -255,9 +255,12 @@ class GUI:
     # __________________________________________________________________________________________________________________
     def select_spell(self, spell: Spell):
         self.engine.select_spell(spell)
-        self.canvas.unbind("<Button-1>")
-        self.root.bind("<Button-1>", self.cast_spell)
-        self.create_mask_spell()
+
+        # -- display selected spell po
+        if self.engine.current_player.selected_spell is not None:
+            self.canvas.unbind("<Button-1>")
+            self.root.bind("<Button-1>", self.cast_spell)
+            self.create_mask_spell()
 
     # __________________________________________________________________________________________________________________
     def deselect_spell(self, envent=None):

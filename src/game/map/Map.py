@@ -139,7 +139,11 @@ class Map:
         )
 
     # __________________________________________________________________________________________________________________
-    def create_spell_mask(self, player, spell):
+    def create_spell_mask(self, player):
+        spell = player.selected_spell
+        if spell is None:
+            return
+
         max_po = spell.max_po + spell.is_po_mutable * player.po
         if spell.is_line:
             self.create_mask_line(

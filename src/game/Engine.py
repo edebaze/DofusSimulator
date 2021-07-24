@@ -271,7 +271,7 @@ class Engine(object):
     def select_spell(self, spell: Spell):
         player = self.current_player
         player.select_spell(spell)
-        self.map.create_spell_mask(player, spell)
+        self.map.create_spell_mask(player)
 
     # __________________________________________________________________________________________________________________
     def deselect_spell(self):
