@@ -2,19 +2,23 @@ import inspect
 
 
 class MapItemList:
-    EMPTY:      int = 0
-    VOID:       int = 1
-    BLOCK:      int = 2
+    EMPTY:          int = 0
+    VOID:           int = 1
+    BLOCK:          int = 2
 
-    PLAYER_1:   int = 5
-    PLAYER_2:   int = 6
+    PLAYER_1:       int = 100
+    PLAYER_2:       int = 101
+
+    MASK_PM:       int = 1000
+    MASK_SPELL:    int = 1001
 
     MAP_BOX:    list = [EMPTY, VOID, BLOCK]
     PLAYERS:    list = [PLAYER_1, PLAYER_2]
+    MASKS:      list = [MASK_PM, MASK_SPELL]
 
     @staticmethod
     def get_item_values():
-        item_values = [item_value for (item_name, item_value) in inspect.getmembers(MapItemList) if MapItemList.is_item_name(item_name)]
+        item_values = [item_value for (item_name, item_value) in inspect.getmembers(MapItemList) if MapItemList.is_item_name(item_name) and isinstance(item_value, int)]
         item_values.sort()
         return item_values
 
