@@ -75,6 +75,7 @@ class GUI:
         self.info_bar.set_hp(player.hp)
         self.info_bar.set_pa(player.pa)
         self.info_bar.set_pm(player.pm)
+        self.deselect_spell()
 
         self.root.update()
 
