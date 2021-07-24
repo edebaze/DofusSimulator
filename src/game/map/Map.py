@@ -290,7 +290,7 @@ class Map:
             None : the box is not in the map
             int : value of the content of the box (cf: MapItemList)
         """
-        if box_x >= len(self.matrix[0]) or box_y >= len(self.matrix):
+        if not (self.BOX_WIDTH > box_x >= 0 and self.BOX_HEIGHT > box_y >= 0):
             return None
         return self.matrix[box_y][box_x]
 
