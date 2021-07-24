@@ -1,9 +1,11 @@
-from tkinter import *
 from game.actions.ActionList import ActionList
+from game.spells import Spell, SpellDirectionList
+from game.spells.Spell import Spell
 from game.map import MapItemList, Map
 from game.interface import InfoBar
 from game.Engine import Engine
 
+from tkinter import *
 from PIL import Image, ImageTk
 import numpy as np
 import time
@@ -23,7 +25,7 @@ class GUI:
         self.destroy_at_end_game: bool = True   # destroy tk window when game is ending
         self.is_destroyed: bool = False         # destroy tk window when game is ending
         self.mask_pm: list = []                 # mask for pm (constraining all ids of rect)
-        self.mask_po: list = []                 # mask for po (constraining all ids of rect)
+        self.mask_spell: list = []                 # mask for po (constraining all ids of rect)
 
 # ======================================================================================================================
     # ENV METHODS
@@ -88,14 +90,14 @@ class GUI:
         y = 0
         for row in self.map.matrix:
             x = 0
-            for block in row:
+            for box_content in row:
                 color = 'white' if ((x + y) // self.map.BOX_DIM) % 2 == 0 else 'grey'
 
-                if block == MapItemList.VOID:
+                if box_content[self.map.item_void_index] == 1:
                     color = 'black'
 
-                if block == MapItemList.BLOCK:
-                    color = 'red'
+                if box_content[self.map.item_block_index] == MapItemList.BLOCK:
+                    color = 'yellow'
 
                 canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill=color, outline='black')
                 x += self.map.BOX_DIM
@@ -243,29 +245,41 @@ class GUI:
 
 # ======================================================================================================================
     # SPELL
-    def auto_cast_spell(self, spell, event=None):
+    def auto_cast_spell(self, spell: Spell, event=None):
         spells = self.engine.current_player.class_.spells
         for i in range(len(spells)):
-            if spell.type == spells[i].type:
+            if spell.id == spells[i].id:
                 action = ActionList.get_cast_spell(i)
                 self.play_action(action)
 
     # __________________________________________________________________________________________________________________
-    def select_spell(self, spell):
-        player = self.engine.current_player
-        player.select_spell(spell.type)
+    def select_spell(self, spell: Spell):
+        self.engine.select_spell(spell)
         self.canvas.unbind("<Button-1>")
         self.root.bind("<Button-1>", self.cast_spell)
-        po = spell.po + int(spell.is_po_mutable) * player.po
-        self.create_mask_po(po)
+        self.create_mask_spell()
 
     # __________________________________________________________________________________________________________________
     def deselect_spell(self, envent=None):
-        player = self.engine.current_player
-        player.deselect_spell()
+        self.engine.deselect_spell()
         self.reset_left_click_binding()
-        self.delete_mask_po()
+        self.delete_mask_spell()
         self.root.unbind('<Button-1>')
+
+    # __________________________________________________________________________________________________________________
+    def display_spell_target(self, event):
+        spell = self.engine.current_player.selected_spell
+        box_x, box_y = self.map.get_selected_box(event)
+
+        x_player = self.engine.current_player.box_x
+        y_player = self.engine.current_player.box_y
+
+        # -- orientate spell target matrix according to spell direction
+        spell_direction = SpellDirectionList.get_direction(box_x, box_y, x_player, y_player)
+        spell_target_matrix = SpellDirectionList.orientate_spell(spell.spell_target, spell_direction)
+
+        # -- place center of spell on selected box
+        # TODO
 
     # __________________________________________________________________________________________________________________
     def cast_spell(self, event):
@@ -341,7 +355,7 @@ class GUI:
         tk_img = ImageTk.PhotoImage(Image.open(spell.img).resize((self.info_bar.SPELL_IMG_DIM, self.info_bar.SPELL_IMG_DIM)))
         label = Button(self.canvas, image=tk_img)
         # label.config(command=lambda button=label: self.select_spell(spell))
-        label.config(command=lambda button=label: self.auto_cast_spell(spell))
+        label.config(command=lambda button=label: self.select_spell(spell))
         label.place(x=x, y=y, anchor=NW)
 
         # -- save spell label
@@ -357,8 +371,16 @@ class GUI:
 # ======================================================================================================================
     # MASKS
     def create_mask_pm(self, event=None):
-        player = self.engine.current_player
-        self.mask_pm = self.create_mask_range(player.box_x, player.box_y, player.pm, 'green')
+        positions = self.map.get_item_positions(MapItemList.MASK_PM)
+        mask = []
+        for pos in positions:
+            x = pos[0] * self.map.BOX_DIM
+            y = pos[1] * self.map.BOX_DIM
+            rect = self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill='green', outline='black')
+            self.canvas.tag_bind(rect, '<Enter>', self.display_spell_target)
+            mask.append(rect)
+
+        self.mask_pm = mask
 
     # __________________________________________________________________________________________________________________
     def delete_mask_pm(self, event=None):
@@ -366,23 +388,31 @@ class GUI:
             self.canvas.delete(rect)
 
     # __________________________________________________________________________________________________________________
-    def create_mask_po(self, po):
-        player = self.engine.current_player
-        self.mask_po = self.create_mask_range(player.box_x, player.box_y, po, 'blue')
+    def create_mask_spell(self):
+        positions = self.map.get_item_positions(MapItemList.MASK_SPELL)
+        mask = []
+        for pos in positions:
+            x = pos[0] * self.map.BOX_DIM
+            y = pos[1] * self.map.BOX_DIM
+            rect = self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill='blue', outline='black')
+            self.canvas.tag_bind(rect, '<Enter>', self.display_spell_target)
+            mask.append(rect)
+
+        self.mask_spell = mask
 
     # __________________________________________________________________________________________________________________
-    def delete_mask_po(self):
-        for rect in self.mask_po:
+    def delete_mask_spell(self):
+        for rect in self.mask_spell:
             self.canvas.delete(rect)
 
     # __________________________________________________________________________________________________________________
-    def create_mask_range(self, box_x: int, box_y: int, n_box: int, color: str = 'blue'):
+    def create_mask_range(self, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0, color: str = 'blue'):
         mask = []
 
-        y = (box_y - n_box) * self.map.BOX_DIM
+        y = (box_y - n_box_max) * self.map.BOX_DIM
 
         n_box_row = 0  # number of boxes to create on the current row
-        for i in range(2 * n_box + 1):
+        for i in range(2 * n_box_max + 1):
             skip = False
 
             # -- do not create mask outside map
@@ -395,7 +425,52 @@ class GUI:
                 for j in range(2 * n_box_row + 1):
                     skip = False
                     # -- do not create mask on the player
-                    if i == n_box and j == n_box_row:
+                    if i == n_box_max and j == n_box_row:
+                        skip = True
+
+                    # -- do not create mask outside map
+                    if not self.map.BOX_WIDTH > x // self.map.BOX_DIM >= 0:
+                        skip = True
+
+                    # -- do not create mask in MIN PO
+                    if abs(i - n_box_max) + abs(j - n_box_row) <= n_box_min:
+                        skip = True
+
+                    if not skip:
+                        mask.append(self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill=color, outline='black'))
+
+                    x += self.map.BOX_DIM
+
+            if i >= n_box_max:
+                n_box_row -= 1  # decrease number of boxes by row if row is above half number of rows
+            else:
+                n_box_row += 1  # increase number of boxes by row
+
+            y += self.map.BOX_DIM
+
+        return mask
+
+    # __________________________________________________________________________________________________________________
+    def create_mask_line(self, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0, color: str = 'blue'):
+        mask = []
+
+        y = (box_y - n_box_max) * self.map.BOX_DIM
+
+        n_box_row = 0  # number of boxes to create on the current row
+        for i in range(2 * n_box_max + 1):
+            skip = False
+
+            # -- do not create mask outside map
+            if not self.map.BOX_HEIGHT > y // self.map.BOX_DIM >= 0:
+                skip = True
+
+            x = (box_x - n_box_row) * self.map.BOX_DIM
+
+            if not skip:
+                for j in range(2 * n_box_row + 1):
+                    skip = False
+                    # -- do not create mask on the player
+                    if i == n_box_max and j == n_box_row:
                         skip = True
 
                     # -- do not create mask outside map
@@ -403,12 +478,11 @@ class GUI:
                         skip = True
 
                     if not skip:
-                        mask.append(self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill=color,
-                                                            outline='black'))
+                        mask.append(self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill=color, outline='black'))
 
                     x += self.map.BOX_DIM
 
-            if i >= n_box:
+            if i >= n_box_max:
                 n_box_row -= 1  # decrease number of boxes by row if row is above half number of rows
             else:
                 n_box_row += 1  # increase number of boxes by row
