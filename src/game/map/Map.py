@@ -163,7 +163,7 @@ class Map:
             )
 
     # __________________________________________________________________________________________________________________
-    def create_mask_range(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0):
+    def create_mask_range(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 1):
         """
             create a mask on the map
 
@@ -201,7 +201,7 @@ class Map:
                         skip = True
 
                     # -- do not create mask in MIN PO
-                    if abs(y - box_y) + abs(x - box_x) <= n_box_min:
+                    if abs(y - box_y) + abs(x - box_x) < n_box_min:
                         skip = True
 
                     if not skip:
