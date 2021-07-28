@@ -10,10 +10,11 @@ import copy
 class Map:
     BOX_DIM = 50
     PADDING = 200
+    MAX_SIZE = 20
 
-    def __init__(self, map_number: int = 0):
-        self.map_number: int    = map_number    # map to load's number
-        self.matrix: np.ndarray = np.empty(0)   # matrix of the map, containing each item values
+    def __init__(self, map_number: (None, int) = 0):
+        self.map_number: (None, int)    = map_number    # map to load's number
+        self.matrix: np.ndarray         = np.empty(0)   # matrix of the map, containing each item values
 
         # ITEM VALUES (stock here to avoid recalculation)
         self.item_values: list  = MapItemList.get_item_values()                 # list of all item_values
@@ -38,12 +39,16 @@ class Map:
                 WIDTH = map width in pixel
                 HEIGHT = map height in pixel
         """
-        self.matrix = self.load_map(self.map_number)
+        if self.map_number is not None:
+            self.matrix = self.load_map(self.map_number)
 
-        self.BOX_WIDTH = len(self.matrix[0])
-        self.BOX_HEIGHT = len(self.matrix)
-        self.WIDTH = self.BOX_WIDTH * self.BOX_DIM
-        self.HEIGHT = self.BOX_HEIGHT * self.BOX_DIM
+            self.BOX_WIDTH = len(self.matrix[0])
+            self.BOX_HEIGHT = len(self.matrix)
+            self.WIDTH = self.BOX_WIDTH * self.BOX_DIM
+            self.HEIGHT = self.BOX_HEIGHT * self.BOX_DIM
+
+        else:
+            self.create_random_map(width=self.BOX_WIDTH)
 
     # __________________________________________________________________________________________________________________
     def get_initial_player_placement(self, team):
@@ -517,3 +522,8 @@ class Map:
                 new_map[i, j, index_item] = 1
 
         return new_map
+
+    # __________________________________________________________________________________________________________________
+    @staticmethod
+    def create_random_map(width, height, void=True, blocs=True):
+        return
