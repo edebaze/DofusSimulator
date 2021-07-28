@@ -159,9 +159,13 @@ class Engine(object):
         self.map.remove_player_mask_pm()    # remove current mask pm
 
         # -- activate new current player
-        self.current_player = self.players[current_player_index]
-        self.current_player.activate()
-        self.map.create_player_mask_pm(self.current_player)
+        player = self.players[current_player_index]
+        self.current_player = player
+        player.activate()
+        self.map.create_player_mask_pm(player)
+
+        # -- update reward and new_state of current player
+        player.agent.update_memory(new_state=self.get_state(), reward=player.get_reward())
 
     def play_action(self, action=None):
         agent = self.current_player.agent
