@@ -25,7 +25,8 @@ class GUI:
         self.destroy_at_end_game: bool = True   # destroy tk window when game is ending
         self.is_destroyed: bool = False         # destroy tk window when game is ending
         self.mask_pm: list = []                 # mask for pm (constraining all ids of rect)
-        self.mask_spell: list = []                 # mask for po (constraining all ids of rect)
+        self.mask_spell: list = []              # mask for po (constraining all ids of rect)
+        self.mask_spell_zone: list = []         # mask for zone of the spell
 
 # ======================================================================================================================
     # ENV METHODS
@@ -276,21 +277,6 @@ class GUI:
         self.root.unbind('<Button-1>')
 
     # __________________________________________________________________________________________________________________
-    def display_spell_target(self, event):
-        spell = self.engine.current_player.selected_spell
-        box_x, box_y = self.map.get_selected_box(event)
-
-        x_player = self.engine.current_player.box_x
-        y_player = self.engine.current_player.box_y
-
-        # -- orientate spell target matrix according to spell direction
-        spell_direction = SpellDirectionList.get_direction(box_x, box_y, x_player, y_player)
-        spell_target_matrix = SpellDirectionList.orientate_spell(spell.spell_target, spell_direction)
-
-        # -- place center of spell on selected box
-        # TODO
-
-    # __________________________________________________________________________________________________________________
     def cast_spell(self, event):
         box_x, box_y = self.map.get_selected_box(event)
         self.engine.cast_spell(box_x, box_y)
@@ -386,7 +372,7 @@ class GUI:
             x = pos[0] * self.map.BOX_DIM
             y = pos[1] * self.map.BOX_DIM
             rect = self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill='green', outline='black')
-            self.canvas.tag_bind(rect, '<Enter>', self.display_spell_target)
+            self.canvas.tag_bind(rect, '<Enter>', self.create_mask_spell_zone)
             mask.append(rect)
 
         self.mask_pm = mask
@@ -404,7 +390,8 @@ class GUI:
             x = pos[0] * self.map.BOX_DIM
             y = pos[1] * self.map.BOX_DIM
             rect = self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill='blue', outline='black')
-            self.canvas.tag_bind(rect, '<Enter>', self.display_spell_target)
+            self.canvas.tag_bind(rect, '<Enter>', self.create_mask_spell_zone)
+            self.canvas.tag_bind(rect, '<Leave>', self.delete_mask_spell_zone)
             mask.append(rect)
 
         self.mask_spell = mask
@@ -413,6 +400,38 @@ class GUI:
     def delete_mask_spell(self):
         for rect in self.mask_spell:
             self.canvas.delete(rect)
+
+    # __________________________________________________________________________________________________________________
+    def create_mask_spell_zone(self, event):
+        spell = self.engine.current_player.selected_spell
+        box_x, box_y = self.map.get_selected_box(event)
+
+        x_player = self.engine.current_player.box_x
+        y_player = self.engine.current_player.box_y
+
+        # -- orientate spell target matrix according to spell direction
+        spell_direction = SpellDirectionList.get_direction(box_x, box_y, x_player, y_player)
+        spell_zone = SpellDirectionList.orientate_spell(spell.zone, spell_direction)
+
+        # -- place center of spell on selected box
+        zone_center = np.argwhere(spell_zone == Spell.ZONE_CENTER)
+        zone_ranges = np.argwhere(spell_zone == Spell.ZONE_RANGE)
+        zone_ranges = np.concatenate([zone_ranges, zone_center])
+
+        for zone_range in zone_ranges:
+            x = (zone_range[0] + box_x - zone_center[0, 0]) * self.map.BOX_DIM
+            y = (zone_range[1] + box_y - zone_center[0, 1]) * self.map.BOX_DIM
+
+            rect = self.canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill='red', outline='black')
+            self.mask_spell_zone.append(rect)
+
+        self.root.update()
+
+    # __________________________________________________________________________________________________________________
+    def delete_mask_spell_zone(self, event=None):
+        for rect in self.mask_spell_zone:
+            self.canvas.delete(rect)
+        self.root.update()
 
     # __________________________________________________________________________________________________________________
     def create_mask_range(self, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0, color: str = 'blue'):
