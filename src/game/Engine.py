@@ -228,7 +228,19 @@ class Engine(object):
 
     # __________________________________________________________________________________________________________________
     def move(self, player, pm_used: int = 1):
+        """
+            Apply movement to player
+        :param player:
+        :param pm_used:
+        :return:
+        """
+        # -- reset blocked actions if movement is successful
+        player.agent.blocked_actions = []
+
+        # -- remove 1 PM
         player.pm -= pm_used
+
+        # -- place player on the map
         self.map.place_player(player)
 
     # __________________________________________________________________________________________________________________
@@ -236,6 +248,10 @@ class Engine(object):
         box_x = player.box_x - 1
         if not self.is_move_ok(player, box_x, player.box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_LEFT)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_x = box_x
@@ -246,6 +262,10 @@ class Engine(object):
         box_x = player.box_x + 1
         if not self.is_move_ok(player, box_x, player.box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_RIGHT)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_x = box_x
@@ -256,6 +276,10 @@ class Engine(object):
         box_y = player.box_y - 1
         if not self.is_move_ok(player, player.box_x, box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_UP)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_y = box_y
@@ -266,6 +290,10 @@ class Engine(object):
         box_y = player.box_y + 1
         if not self.is_move_ok(player, player.box_x, box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_DOWN)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_y = box_y

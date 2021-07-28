@@ -69,7 +69,7 @@ class Agent:
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
 
-        # Model instanciation
+        # Model instantiation
         self.model: Model = self.create_model() if model is None else model
 
         # Load / Save model
@@ -218,9 +218,10 @@ class Agent:
                 'input2': np.asarray([state[1]]),
             })
 
-            # TODO : block actions
-            # min_reward = np.min(actions)
-            # actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
+            actions = actions.numpy()[0]
+            if len(self.blocked_actions) > 0:
+                min_reward = np.min(actions)
+                actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
             action = np.argmax(actions)
 
         return action
