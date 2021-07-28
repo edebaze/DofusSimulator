@@ -123,7 +123,7 @@ class Player:
             return
 
         player_prev_hp = player.hp
-        player.get_hit(self.selected_spell)
+        player.get_hit(self.selected_spell.damages(), self.selected_spell.elem)
         true_damages = player_prev_hp - player.hp
 
         self.print(f'{self.selected_spell.name}: {true_damages} hp')
@@ -142,7 +142,7 @@ class Player:
                 self.reward -= RewardList.KILL     # negative reward if ally
 
     # __________________________________________________________________________________________________________________
-    def get_hit(self, damages: int, elem: str):
+    def get_hit(self, damages: int, elem: str = ''):
         """
             get hit with a spell
         :param damages: number of damage to inflict
