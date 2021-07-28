@@ -17,7 +17,7 @@ import time
 class Engine(object):
     MAX_TURN_GAME = 50
 
-    def __init__(self, map_number: int = 0, agents: list = [None, None], flag_create_dir: bool = True):
+    def __init__(self, map_number: (None,int) = None, agents: list = [None, None], flag_create_dir: bool = True):
         self.__name__ = 'Engine'
         self.name                           = self.create_name()
         self.map_number: int                = map_number

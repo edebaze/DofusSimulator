@@ -80,13 +80,11 @@ class Player:
             self.reward += RewardList.ROUND_START   # remove reward at the end of a round
             self.is_current_player = False          # remove as current player
 
-        self.new_turn()
-        self.deselect_spell()
-
-    def new_turn(self):
         self.pa = self.BASE_PA
         self.pm = self.BASE_PM
         self.num_actions_in_turn = 0
+
+        self.deselect_spell()
 
 # ======================================================================================================================
     # ENV METHODS
