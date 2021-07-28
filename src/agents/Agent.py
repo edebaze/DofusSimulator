@@ -30,7 +30,7 @@ class Agent:
         actions,
         is_activated: bool = True,
         model_structure: list = [],
-        input_dim: list = [],
+        input_dim=[],
         model: Model = None,
         epochs=EPOCHS,
         lr=LR,
