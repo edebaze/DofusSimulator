@@ -14,6 +14,11 @@ import copy
 class Player:
     MAX_ACTIONS_IN_TURN = 10
 
+    MAX_HP = 150
+    MAX_PA = 12
+    MAX_PM = 6
+    MAX_PO = 6
+
     def __init__(self, index: int = 0, class_name: str = '', agent: (None, Agent) = None):
         # Identity
         self.agent = agent
@@ -185,12 +190,16 @@ class Player:
     # ENV ACTIONS
     def get_state(self):
         return np.asarray([
-            self.pa,
-            self.pm,
-            self.hp,
-            self.po,
-            self.box_x,
-            self.box_y,
+            self.pa / self.MAX_PA,
+            self.pm / self.MAX_PM,
+            self.hp / self.MAX_HP,
+            self.po / self.MAX_PO,
+            self.pa / self.BASE_PA,
+            self.pm / self.BASE_PM,
+            self.hp / self.BASE_HP,
+            self.po / self.BASE_PO,
+            self.box_x / Map.MAX_SIZE,
+            self.box_y / Map.MAX_SIZE,
             int(self.is_current_player),
-            self.last_action,
+            self.last_action / len(ActionList.get_actions()),
         ])
