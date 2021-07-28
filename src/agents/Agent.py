@@ -80,11 +80,12 @@ class Agent:
             Create prediction model
         """
         inputs1 = Input(self.input_dim[0], name='input1')
-        x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(inputs1)
-        x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = Conv2D(128, kernel_size=2, strides=1, activation="relu")(inputs1)
+        x = Conv2D(128, kernel_size=2, strides=1, activation="relu")(x)
         x = MaxPooling2D(pool_size=2)(x)
-        x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
-        x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = Conv2D(256, kernel_size=2, strides=1, activation="relu")(x)
+        x = Conv2D(256, kernel_size=2, strides=1, padding='same', activation="relu")(x)
+        x = MaxPooling2D(pool_size=2)(x)
         outputs1 = Flatten()(x)
 
         model_cnn = Model(inputs1, outputs1)
@@ -92,13 +93,13 @@ class Agent:
         # ------------------------------------------------------------------------
         inputs2 = Input(self.input_dim[1], name='input2')
         x = Dense(64, activation="relu")(inputs2)
-        outputs2 = Dense(128, activation="relu")(x)
+        outputs2 = Dense(64, activation="relu")(x)
 
         model_fc = Model(inputs2, outputs2)
 
         # ------------------------------------------------------------------------
         mondel_concat = concatenate([model_cnn.output, model_fc.output], axis=1)
-        x = Dense(256, activation="relu")(mondel_concat)
+        x = Dense(512, activation="relu")(mondel_concat)
         x = Dense(256, activation="relu")(x)
         model_outputs = Dense(self.n_actions, activation=None)(x)
 
