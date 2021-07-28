@@ -29,7 +29,7 @@ class Player:
 
         # Canvas items
         self.tk_img = None                      # image of the player (PhotoImage object)
-        self.label: Label = None        # label of the image in Canvas
+        self.label: Label = None                # label of the image in Canvas
 
         # Statistics
         self.is_dead: bool = False
@@ -110,36 +110,6 @@ class Player:
     def deselect_spell(self):
         if self.selected_spell is not None:
             self.selected_spell = None
-
-    # __________________________________________________________________________________________________________________
-    def hit(self, player):
-        """
-            current player is hitting an other player with current selected spell
-        :param player:
-        :return:
-        """
-        # -- if targeted player is already dead, nothing to do
-        if player.is_dead:
-            return
-
-        player_prev_hp = player.hp
-        player.get_hit(self.selected_spell.damages(), self.selected_spell.elem)
-        true_damages = player_prev_hp - player.hp
-
-        self.print(f'{self.selected_spell.name}: {true_damages} hp')
-
-        # update reward if player is not an ally
-        if player.team != self.team:
-            self.reward += true_damages * RewardList.DAMAGES
-        else:
-            self.reward -= true_damages * RewardList.DAMAGES    # negative reward for friendly fire
-
-        # -- if targeted player is dead
-        if player.is_dead:
-            if player.team != self.team:
-                self.reward += RewardList.KILL     # positive reward if not ally
-            else:
-                self.reward -= RewardList.KILL     # negative reward if ally
 
     # __________________________________________________________________________________________________________________
     def get_hit(self, damages: int, elem: str = ''):
