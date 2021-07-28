@@ -98,7 +98,7 @@ class GUI:
                 if box_content[self.map.item_void_index] == 1:
                     color = 'black'
 
-                if box_content[self.map.item_block_index] == MapItemList.BLOCK:
+                if box_content[self.map.item_block_index] == 1:
                     color = 'yellow'
 
                 canvas.create_rectangle(x, y, x + self.map.BOX_DIM, y + self.map.BOX_DIM, fill=color, outline='black')
