@@ -67,7 +67,7 @@ class SpellList:
             spell.img = Spell.IMG_DIR + '/tempete_de_puissance.png'
             spell.pa = 3
             spell.min_po = 3
-            spell.max_po = 6
+            spell.max_po = 4
             spell.max_damage = 10
             spell.min_damage = 10
             spell.is_po_mutable = False
@@ -78,9 +78,9 @@ class SpellList:
             spell.id = spell_id
             spell.img = Spell.IMG_DIR + '/marteau_de_moon.jpeg'
             spell.pa = 5
-            spell.min_po = 4
-            spell.max_po = 5
-            spell.max_damage = 25
+            spell.min_po = 6
+            spell.max_po = 6
+            spell.max_damage = 20
             spell.min_damage = 10
 
         # ===============================================================
