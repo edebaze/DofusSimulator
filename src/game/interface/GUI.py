@@ -164,6 +164,7 @@ class GUI:
 
         if self.engine.get_done():
             self.end_game()
+            return
 
         # -- GUI displaying of a turn ending
         self.activate_player(self.engine.current_player)
