@@ -79,20 +79,21 @@ class Agent:
         """
             Create prediction model
         """
-        inputs1 = Input(self.input_dim[0], name='inputs1')
+        inputs1 = Input(self.input_dim[0], name='input1')
         x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(inputs1)
         x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(x)
         x = MaxPooling2D(pool_size=2)(x)
         x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
         x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = MaxPooling2D(pool_size=2)(x)
         outputs1 = Flatten()(x)
 
         model_cnn = Model(inputs1, outputs1)
 
         # ------------------------------------------------------------------------
-        inputs2 = Input(self.input_dim[1], name='inputs2')
-        x = Dense(64, activation="relu")(inputs2)
-        outputs2 = Dense(128, activation="relu")(x)
+        inputs2 = Input(self.input_dim[1], name='input2')
+        x = Dense(32, activation="relu")(inputs2)
+        outputs2 = Dense(64, activation="relu")(x)
 
         model_fc = Model(inputs2, outputs2)
 
