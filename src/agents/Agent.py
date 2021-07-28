@@ -130,6 +130,9 @@ class Agent:
         """
         self.memory.store_transition(state, action_table, reward, new_state, done)
 
+    def update_memory(self, new_state, reward):
+        self.memory.update_memory(new_state=new_state, reward=reward)
+
     def train_on_memory(self):
         loss_array = []     # array of each batch loss used to calculate avg training loss
         
