@@ -79,7 +79,7 @@ class Agent:
         """
             Create prediction model
         """
-        inputs1 = Input(self.input_dim[0], name='inputs1')
+        inputs1 = Input(self.input_dim[0], name='input1')
         x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(inputs1)
         x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(x)
         x = MaxPooling2D(pool_size=2)(x)
@@ -90,7 +90,7 @@ class Agent:
         model_cnn = Model(inputs1, outputs1)
 
         # ------------------------------------------------------------------------
-        inputs2 = Input(self.input_dim[1], name='inputs2')
+        inputs2 = Input(self.input_dim[1], name='input2')
         x = Dense(64, activation="relu")(inputs2)
         outputs2 = Dense(128, activation="relu")(x)
 
@@ -212,11 +212,15 @@ class Agent:
 
         # -- choose action from model prediction
         else:
-            action = self.model({
+            actions = self.model({
                 'input1': np.asarray([state[0]]),
                 'input2': np.asarray([state[1]]),
             })
-            action = np.argmax(action)
+
+            # TODO : block actions
+            # min_reward = np.min(actions)
+            # actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
+            action = np.argmax(actions)
 
         return action
 
