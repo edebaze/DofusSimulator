@@ -60,10 +60,11 @@ class Player:
     # INITIALIZATION
     def activate(self):
         """
-            activate player
+            activate player when his turn begins
         """
         self.last_action = ActionList.END_TURN  # reset last action taken this turn
         self.is_current_player = True           # set as current player this turn
+        self.agent.blocked_actions = []         # reset blocked actions
         return
 
     def deactivate(self):

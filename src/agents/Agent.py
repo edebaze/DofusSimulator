@@ -210,6 +210,8 @@ class Agent:
         # -- choose random action (if random is allowed)
         if np.random.random() < self.epsilon and allow_random:
             action = np.random.choice(self.actions)
+            while action in self.blocked_actions and len(self.blocked_actions) != self.n_actions:
+                action = np.random.choice(self.actions)
 
         # -- choose action from model prediction
         else:

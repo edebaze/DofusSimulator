@@ -304,6 +304,10 @@ class Engine(object):
     def select_spell(self, spell: Spell):
         player = self.current_player
         player.select_spell(spell)
+
+        if player.selected_spell is None:
+            self.block_spell_action(player, spell)
+
         self.map.create_spell_mask(player)
 
     # __________________________________________________________________________________________________________________
@@ -359,8 +363,10 @@ class Engine(object):
         index_spell_mask = self.map.item_values.index(MapItemList.MASK_SPELL)
         if box_content[index_spell_mask] == 0:
             player.print('SPELL OUT OF PO RANGE')
-            player.reward = RewardList.BAD_SPELL_CASTING
-            self.deselect_spell()
+            player.reward = RewardList.BAD_SPELL_CASTING        # add negative reward to the player
+
+            self.block_spell_action(player, spell)         # block the spell until state changes
+            self.deselect_spell()                   # deselect the spell
             return
 
         # =================================================================================
@@ -434,7 +440,21 @@ class Engine(object):
 
         return damages
 
-# ======================================================================================================================
+    def block_spell_action(self, player: Player, spell: Spell):
+        """
+            block the option for the agent to select the spell until the state changes (to avoid loop of choosing the
+            same action during the turn)
+        :param player:
+        :param spell:
+        :return:
+        """
+        spell_index = player.class_.spells.index(spell)
+        action = ActionList.get_cast_spell(spell_index)
+        action_index = self.actions.index(action)
+        if action_index not in player.agent.blocked_actions:
+            player.agent.blocked_actions.append(action_index)
+
+    # ======================================================================================================================
     # UTILITY
     def duplicate(self):
         """
