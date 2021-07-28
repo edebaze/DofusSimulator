@@ -312,10 +312,11 @@ class Engine(object):
         player = self.current_player
 
         if player.selected_spell is None:
-            player.print('NO SPELL SELECTED')
+            player.print('ERROR : cast_spell() with NO SPELL SELECTED')
             return
 
         spell = player.selected_spell
+        player.print(f'{spell.name}: ', end='')
 
         # =================================================================================
         # CHECK IS IN MAP
