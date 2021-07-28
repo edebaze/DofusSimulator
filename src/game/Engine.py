@@ -350,31 +350,33 @@ class Engine(object):
 
         # =================================================================================
         # CHECK OTHER PLAYERS
-        for index_player in range(len(MapItemList.PLAYERS)):
-            item_value = MapItemList.PLAYERS[index_player]          # get player item_value
-            item_index = self.map.item_values.index(item_value)     # get index value of player
-            # -- if player is in box_content
-            if box_content[item_index] == 1:
-                targeted_player = self.players[index_player]
-                self.hit(targeted_player, self.current_player.selected_spell)
+        for targeted_player in self.players:
+            spell = self.current_player.selected_spell
+            is_in_zone, dist = spell.is_in_zone(targeted_player, box_x, box_y)
+            if is_in_zone:
+                self.hit(targeted_player, spell, dist)
 
         player.pa -= spell.pa  # use PA
         self.deselect_spell()
 
-    def hit(self, player: Player, spell: Spell):
+    def hit(self, player: Player, spell: Spell, dist=0):
         """
             current player is hitting an other player with current selected spell
-        :param player:
+
+        :param player:  targeted player
+        :param spell:   spell used
+        :param dist:    distance of player in the spell zone
         :return:
         """
         # -- if targeted player is already dead, nothing to do
         if player.is_dead:
             return
 
-        self.current_player.print(f'{spell.name}: ', end='')
+        # -- hit targeted player
+        damages = spell.damages()                       # get spell damages
+        damages = round(damages * (1 - dist/10))        # apply damages reduction due to distance
+        damages = player.get_hit(damages, spell.elem)   # hit player and get actual hp loss of the targeted player
 
-        # -- set true damages
-        damages = player.get_hit(spell.damages(), spell.elem)
         # -- add bump damages
         bumb_x, bumb_y = SpellDirectionList.get_direction_x_y(player.box_x, player.box_y, self.current_player.box_x, self.current_player.box_y)
         for i in range(spell.bump):

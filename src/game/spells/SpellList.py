@@ -108,7 +108,7 @@ class SpellList:
             spell.min_damage = 1
             spell.bump = 1
             spell.is_line = True
-            spell.spell_target = Spell.create_zone_line(4)
+            spell.zone = Spell.create_zone_line(4)
 
         elif spell_id == SpellList.FLECHE_GLACEE:
             spell = Spell()
