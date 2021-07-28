@@ -169,11 +169,11 @@ class Player:
 
 # ======================================================================================================================
     # UTILITY
-    def print(self, msg):
+    def print(self, msg, end='\n'):
         if not self.print_mode_active:
             return
         color = colorama.Fore.RED if self.team == 1 else colorama.Fore.BLUE
-        print(f'{color}{msg}{colorama.Fore.RESET}')
+        print(f'{color}{msg}{colorama.Fore.RESET}', end=end)
 
     def duplicate(self):
         copy_player = copy.copy(self)

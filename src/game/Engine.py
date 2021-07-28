@@ -371,6 +371,8 @@ class Engine(object):
         if player.is_dead:
             return
 
+        self.current_player.print(f'{spell.name}: ', end='')
+
         # -- set true damages
         damages = player.get_hit(spell.damages(), spell.elem)
         # -- add bump damages
@@ -384,7 +386,7 @@ class Engine(object):
             player.box_y += bumb_y
             self.map.place_player(player, flag_set_mask_pm=False)
 
-        self.current_player.print(f'{spell.name}: {damages} hp')
+        self.current_player.print(f'{damages} hp')
 
         # update reward if player is not an ally
         if player.team != self.current_player.team:
