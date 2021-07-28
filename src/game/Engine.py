@@ -330,13 +330,9 @@ class Engine(object):
         index_spell_mask = self.map.item_values.index(MapItemList.MASK_SPELL)
         if box_content[index_spell_mask] == 0:
             player.print('SPELL OUT OF PO RANGE')
+            player.reward = RewardList.BAD_SPELL_CASTING
             self.deselect_spell()
             return
-
-        # =================================================================================
-        # CHECK EMPTY
-        elif box_content[self.map.item_empty_index] == 1:
-            player.print('HIT EMPTY CASE')
 
         # =================================================================================
         # CHECK VOID
