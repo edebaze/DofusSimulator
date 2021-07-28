@@ -33,6 +33,6 @@ class ActionList:
         action_name = 'CAST_SPELL_' + str(spell_index)
         actions = [value for (name, value) in inspect.getmembers(ActionList) if action_name == name]
         if actions == 0:
-            print('Unable to find aciton', action_name)
+            print('Unable to find action', action_name)
 
         return actions[0]

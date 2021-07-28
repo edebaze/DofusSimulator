@@ -69,7 +69,7 @@ class Agent:
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
 
-        # Model instanciation
+        # Model instantiation
         self.model: Model = self.create_model() if model is None else model
 
         # Load / Save model
@@ -80,11 +80,11 @@ class Agent:
             Create prediction model
         """
         inputs1 = Input(self.input_dim[0], name='input1')
-        x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(inputs1)
-        x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = Conv2D(128, kernel_size=2, strides=1, activation="relu")(inputs1)
+        x = Conv2D(128, kernel_size=2, strides=1, activation="relu")(x)
         x = MaxPooling2D(pool_size=2)(x)
-        x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
-        x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = Conv2D(256, kernel_size=2, strides=1, activation="relu")(x)
+        x = Conv2D(256, kernel_size=2, strides=1, padding='same', activation="relu")(x)
         x = MaxPooling2D(pool_size=2)(x)
         outputs1 = Flatten()(x)
 
@@ -92,14 +92,14 @@ class Agent:
 
         # ------------------------------------------------------------------------
         inputs2 = Input(self.input_dim[1], name='input2')
-        x = Dense(32, activation="relu")(inputs2)
+        x = Dense(64, activation="relu")(inputs2)
         outputs2 = Dense(64, activation="relu")(x)
 
         model_fc = Model(inputs2, outputs2)
 
         # ------------------------------------------------------------------------
         mondel_concat = concatenate([model_cnn.output, model_fc.output], axis=1)
-        x = Dense(256, activation="relu")(mondel_concat)
+        x = Dense(512, activation="relu")(mondel_concat)
         x = Dense(256, activation="relu")(x)
         model_outputs = Dense(self.n_actions, activation=None)(x)
 
@@ -210,14 +210,21 @@ class Agent:
         # -- choose random action (if random is allowed)
         if np.random.random() < self.epsilon and allow_random:
             action = np.random.choice(self.actions)
+            while action in self.blocked_actions and len(self.blocked_actions) != self.n_actions:
+                action = np.random.choice(self.actions)
 
         # -- choose action from model prediction
         else:
-            action = self.model({
+            actions = self.model({
                 'input1': np.asarray([state[0]]),
                 'input2': np.asarray([state[1]]),
             })
-            action = np.argmax(action)
+
+            actions = actions.numpy()[0]
+            if len(self.blocked_actions) > 0:
+                min_reward = np.min(actions)
+                actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
+            action = np.argmax(actions)
 
         return action
 

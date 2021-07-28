@@ -17,7 +17,7 @@ import time
 class Engine(object):
     MAX_TURN_GAME = 50
 
-    def __init__(self, map_number: int = 0, agents: list = [None, None], flag_create_dir: bool = True):
+    def __init__(self, map_number: (None,int) = None, agents: list = [None, None], flag_create_dir: bool = True):
         self.__name__ = 'Engine'
         self.name                           = self.create_name()
         self.map_number: int                = map_number
@@ -228,7 +228,19 @@ class Engine(object):
 
     # __________________________________________________________________________________________________________________
     def move(self, player, pm_used: int = 1):
+        """
+            Apply movement to player
+        :param player:
+        :param pm_used:
+        :return:
+        """
+        # -- reset blocked actions if movement is successful
+        player.agent.blocked_actions = []
+
+        # -- remove 1 PM
         player.pm -= pm_used
+
+        # -- place player on the map
         self.map.place_player(player)
 
     # __________________________________________________________________________________________________________________
@@ -236,6 +248,10 @@ class Engine(object):
         box_x = player.box_x - 1
         if not self.is_move_ok(player, box_x, player.box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_LEFT)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_x = box_x
@@ -246,6 +262,10 @@ class Engine(object):
         box_x = player.box_x + 1
         if not self.is_move_ok(player, box_x, player.box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_RIGHT)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_x = box_x
@@ -256,6 +276,10 @@ class Engine(object):
         box_y = player.box_y - 1
         if not self.is_move_ok(player, player.box_x, box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_UP)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_y = box_y
@@ -266,6 +290,10 @@ class Engine(object):
         box_y = player.box_y + 1
         if not self.is_move_ok(player, player.box_x, box_y):
             player.reward += RewardList.BAD_MOVEMENT
+            # -- block movement until new state (to avoid movement repetition)
+            action_index = self.actions.index(ActionList.MOVE_DOWN)
+            if action_index not in player.agent.blocked_actions:
+                player.agent.blocked_actions.append(action_index)
             return
 
         player.box_y = box_y
@@ -276,6 +304,10 @@ class Engine(object):
     def select_spell(self, spell: Spell):
         player = self.current_player
         player.select_spell(spell)
+
+        if player.selected_spell is None:
+            self.block_spell_action(player, spell)
+
         self.map.create_spell_mask(player)
 
     # __________________________________________________________________________________________________________________
@@ -331,8 +363,10 @@ class Engine(object):
         index_spell_mask = self.map.item_values.index(MapItemList.MASK_SPELL)
         if box_content[index_spell_mask] == 0:
             player.print('SPELL OUT OF PO RANGE')
-            player.reward = RewardList.BAD_SPELL_CASTING
-            self.deselect_spell()
+            player.reward = RewardList.BAD_SPELL_CASTING        # add negative reward to the player
+
+            self.block_spell_action(player, spell)         # block the spell until state changes
+            self.deselect_spell()                   # deselect the spell
             return
 
         # =================================================================================
@@ -406,7 +440,21 @@ class Engine(object):
 
         return damages
 
-# ======================================================================================================================
+    def block_spell_action(self, player: Player, spell: Spell):
+        """
+            block the option for the agent to select the spell until the state changes (to avoid loop of choosing the
+            same action during the turn)
+        :param player:
+        :param spell:
+        :return:
+        """
+        spell_index = player.class_.spells.index(spell)
+        action = ActionList.get_cast_spell(spell_index)
+        action_index = self.actions.index(action)
+        if action_index not in player.agent.blocked_actions:
+            player.agent.blocked_actions.append(action_index)
+
+    # ======================================================================================================================
     # UTILITY
     def duplicate(self):
         """
