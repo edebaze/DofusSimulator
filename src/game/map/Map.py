@@ -82,6 +82,45 @@ class Map:
     def get_state(self) -> np.ndarray:
         return self.matrix
 
+    def get_spell_state(self, box_x, box_y, max_range, enemy_player_item_value) -> np.ndarray:
+        """
+            Create a mini matrix of map containing relevant info for the spell to cast
+                -> complete out of map
+        :param box_x:
+        :param box_y:
+        :param max_range:
+        :param enemy_player_item_value:
+        :return:
+        """
+
+        IS_ENEMY = 0
+        item_values = [IS_ENEMY, MapItemList.MASK_SPELL]
+
+        # -- set index of items
+        index_is_enemy = item_values.index(IS_ENEMY)
+        index_mask_spell = item_values.index(MapItemList.MASK_SPELL)
+
+        # -- index of the enemy and mask_spell in the global item_values list
+        global_enemy_index = self.item_values.index(enemy_player_item_value)
+        global_mask_spell_index = self.item_values.index(MapItemList.MASK_SPELL)
+
+        matrix = np.zeros((max_range, max_range, len(item_values)))
+
+        x = box_x - max_range
+        y = box_y - max_range
+
+        for _ in range(len(max_range) * 2 + 1):
+            for _ in range(len(max_range) * 2 + 1):
+                box_content = self.box_content(x, y)
+                if box_content is not None:
+                    matrix[y, x, index_is_enemy] = box_content[global_enemy_index]
+                    matrix[y, x, index_mask_spell] = box_content[global_mask_spell_index]
+
+                x += 1
+            y += 1
+
+        return matrix
+
 ########################################################################################################################
     # PLACE / REMOVE ITEMS ON POSITIONS
     def place(self, box_x, box_y, item_value) -> None:
@@ -151,7 +190,8 @@ class Map:
                 box_x=player.box_x,
                 box_y=player.box_y,
                 n_box_max=max_po,
-                n_box_min=spell.min_po
+                n_box_min=spell.min_po,
+                with_ldv=spell.has_ldv,
             )
         else:
             self.create_mask_range(
@@ -159,11 +199,12 @@ class Map:
                 box_x=player.box_x,
                 box_y=player.box_y,
                 n_box_max=max_po,
-                n_box_min=spell.min_po
+                n_box_min=spell.min_po,
+                with_ldv=spell.has_ldv,
             )
 
     # __________________________________________________________________________________________________________________
-    def create_mask_range(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 1):
+    def create_mask_range(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 1, with_ldv=False):
         """
             create a mask on the map
 
@@ -204,6 +245,10 @@ class Map:
                     if abs(y - box_y) + abs(x - box_x) < n_box_min:
                         skip = True
 
+                    # -- check if in ldv
+                    if not self.is_in_ldv(box_x, box_y, box_target_x=x, box_target_y=y):
+                        skip = True
+
                     if not skip:
                         self.matrix[y, x, item_index] = 1
 
@@ -217,7 +262,7 @@ class Map:
             y += 1
 
     # __________________________________________________________________________________________________________________
-    def create_mask_line(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0):
+    def create_mask_line(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0, with_ldv: bool = False):
         """
             create a line mask on the map
 
@@ -255,6 +300,10 @@ class Map:
 
                     # -- do not create mask in MIN PO
                     if abs(y - box_y) + abs(x - box_x) < n_box_min:
+                        skip = True
+
+                    # -- check if in ldv
+                    if not self.is_in_ldv(box_x, box_y, box_target_x=x, box_target_y=y):
                         skip = True
 
                     if not skip:
@@ -309,6 +358,54 @@ class Map:
         return box_content is not None and box_content[self.item_empty_index] == 1
 
     # __________________________________________________________________________________________________________________
+    def is_in_ldv(self, box_x, box_y, box_target_x, box_target_y):
+        distanceX = abs(box_target_x - box_x)
+        distanceY = abs(box_target_y - box_y)
+        cumulX = box_x
+        cumulY = box_y
+        cumulN = -1 + distanceX + distanceY
+        xInc = 1 if box_target_x > box_x else -1
+        yInc = 1 if box_target_y > box_y else -1
+        error = distanceX - distanceY
+        distanceX *= 2
+        distanceY *= 2
+
+        if error > 0:
+            cumulX += xInc
+            error -= distanceY
+        elif error < 0:
+            cumulY += yInc
+            error += distanceX
+        else:
+            cumulX += xInc
+            error -= distanceY
+            cumulY += yInc
+            error += distanceX
+            cumulN -= 1
+
+        while cumulN > 0:
+            if self.BOX_HEIGHT > cumulY >= 0 and self.BOX_WIDTH > cumulX >= 0:
+                if self.matrix[cumulY][cumulX][self.item_empty_index] != 1 \
+                        and self.matrix[cumulY][cumulX][self.item_void_index] != 1:
+                    return False
+
+            if error > 0:
+                cumulX += xInc
+                error -= distanceY
+            elif error < 0:
+                cumulY += yInc
+                error += distanceX
+            else:
+                cumulX += xInc
+                error -= distanceY
+                cumulY += yInc
+                error += distanceX
+                cumulN -= 1
+            cumulN -= 1
+
+        return True
+
+    # __________________________________________________________________________________________________________________
     def get_item_position(self, item_value: int) -> (None, tuple):
         """
             get position (box_x, box_y) of an item
@@ -350,12 +447,6 @@ class Map:
         print(f'(x={x}, y={y}) : {content}')
 
     # __________________________________________________________________________________________________________________
-    def get2Dmatrix(self):
-        """ return matrix as 2D object (with only item_values and without masks)"""
-        # TODO
-        return
-
-    # __________________________________________________________________________________________________________________
     def show(self):
         """ show full matrix in the console """
         print(self.matrix)
@@ -371,13 +462,7 @@ class Map:
         print(matrix)
 
     # __________________________________________________________________________________________________________________
-    def show2D(self):
-        """ show the matrix as 2D map in the console """
-        print(self.get2Dmatrix())
-
-    # __________________________________________________________________________________________________________________
     def generate_random_map(self):
-        # TODO !
         matrix = np.zeros((self.BOX_WIDTH, self.BOX_HEIGHT))
 
         # -- set map borders

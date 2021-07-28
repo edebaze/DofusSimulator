@@ -29,6 +29,7 @@ class Spell:
         self.min_po: int = 0
         self.max_po: int = 1
         self.is_po_mutable: bool = True
+        self.has_ldv: bool = True
 
         # DAMAGES
         self.elem: str = self.ELEMENT_NEUTRAL
