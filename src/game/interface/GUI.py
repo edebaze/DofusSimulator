@@ -13,7 +13,7 @@ import pdb
 
 
 class GUI:
-    SLEEP_TIME = 0.2
+    SLEEP_TIME = 1
 
     def __init__(self, engine: Engine):
         self.engine: Engine = engine
