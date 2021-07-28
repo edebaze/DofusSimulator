@@ -290,25 +290,16 @@ class Engine(object):
         if player.selected_spell is None:
             return
 
-        po = spell.max_po + int(spell.is_po_mutable) * player.po
-
-        # =================================================================================
-        # CHECK IF PLAYER IS IN RANGE
+        target_player = None
         for target_player in self.players:
-            if target_player.item_value == player.item_value:
-                continue
-            distance_box_x = abs(target_player.box_x - player.box_x)
-            distance_box_y = abs(target_player.box_y - player.box_y)
-            distance_box = distance_box_x + distance_box_y
+            if target_player.team != self.current_player.team:
+                break
 
-            if distance_box <= po:
-                player.hit(target_player)
-            else:
-                player.reward += RewardList.BAD_SPELL_CASTING
-                player.print(f'{spell.name} CASTED ON NOTHING')
+        if target_player is None:
+            print('Error : no player to target')
+            return
 
-        player.pa -= player.selected_spell.pa   # use PA
-        self.deselect_spell()
+        self.cast_spell(target_player.box_x, target_player.box_y)
 
     # __________________________________________________________________________________________________________________
     def cast_spell(self, box_x, box_y):
