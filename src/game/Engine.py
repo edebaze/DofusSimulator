@@ -132,6 +132,9 @@ class Engine(object):
 
         # -- create_player
         player = Player(index_player, class_name=class_name, agent=agent)
+        if class_name == ClassList.IOP:
+            player.pm += 1
+            player.hp += 50
         player.name = player_name
         player.team = team
         player.box_x = box_x
