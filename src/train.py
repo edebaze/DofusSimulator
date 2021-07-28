@@ -13,7 +13,7 @@ MODULO_WATCH = 500          # watch bots on GUI each N games
 MODULO_SAVE = 200           # save models each N games
 NUM_SHOW_GAMES = 0          # number of games to play (by the user) before training to start generating training data
 
-MAP_NUMBER = 1
+MAP_NUMBER = 2
 
 if __name__ == '__main__':
     # ==================================================================================================================
@@ -25,14 +25,14 @@ if __name__ == '__main__':
     agent1 = Agent(
         is_activated=True,
         model_structure=[512, 512, 256, 256],
-        input_dim=state.shape,
+        input_dim=[state[0].shape, state[1].shape],
         actions=env.actions,
     )
 
     agent2 = Agent(
         is_activated=True,
         model_structure=[512, 512, 256, 256],
-        input_dim=state.shape,
+        input_dim=[state[0].shape, state[1].shape],
         actions=env.actions,
     )
 

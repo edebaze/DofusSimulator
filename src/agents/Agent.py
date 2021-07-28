@@ -2,7 +2,7 @@ from agents.ReplayBuffer import ReplayBuffer
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.layers import Dense, Input, Conv2D, Flatten, MaxPooling2D, concatenate
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
@@ -30,7 +30,7 @@ class Agent:
         actions,
         is_activated: bool = True,
         model_structure: list = [],
-        input_dim: tuple = (),
+        input_dim: list = [],
         model: Model = None,
         epochs=EPOCHS,
         lr=LR,
@@ -48,6 +48,7 @@ class Agent:
         self.is_activated: bool = is_activated  # is the agent auto playing or not
         self.input_dim: tuple = input_dim       # dimension of the input data
         self.actions = actions                  # array of actions that can be taken
+        self.blocked_actions: list = []         # action  that are blocked for the agent
         self.n_actions = len(actions)           # number of actions
 
         self.memory = ReplayBuffer(mem_size=mem_size, input_dim=self.input_dim, n_actions = self.n_actions)
@@ -76,7 +77,40 @@ class Agent:
 
     def create_model(self) -> Model:
         """
-        Create prediction model
+            Create prediction model
+        """
+        inputs1 = Input(self.input_dim[0], name='inputs1')
+        x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(inputs1)
+        x = Conv2D(128, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = MaxPooling2D(pool_size=2)(x)
+        x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        x = Conv2D(256, kernel_size=3, strides=1, padding='same', activation="relu")(x)
+        outputs1 = Flatten()(x)
+
+        model_cnn = Model(inputs1, outputs1)
+
+        # ------------------------------------------------------------------------
+        inputs2 = Input(self.input_dim[1], name='inputs2')
+        x = Dense(64, activation="relu")(inputs2)
+        outputs2 = Dense(128, activation="relu")(x)
+
+        model_fc = Model(inputs2, outputs2)
+
+        # ------------------------------------------------------------------------
+        mondel_concat = concatenate([model_cnn.output, model_fc.output], axis=1)
+        x = Dense(256, activation="relu")(mondel_concat)
+        x = Dense(256, activation="relu")(x)
+        model_outputs = Dense(self.n_actions, activation=None)(x)
+
+        model = Model(inputs=[model_cnn.input, model_fc.input], outputs=model_outputs)
+        model.compile(loss="mse", optimizer=Adam(learning_rate=self.lr))
+        return model
+
+    def create_fc_model(self) -> Model:
+        """
+            TODO : remove that
+
+            create a fully connected model (will be remove)
         """
         inputs = Input(self.input_dim)
 
@@ -103,7 +137,7 @@ class Agent:
         training_dataset = tf.data.Dataset.from_tensor_slices(self.memory.get_buffer())
 
         training_dataset = training_dataset.repeat(self.epoch).shuffle(self.epoch).batch(
-            self.batch_size).prefetch(tf.data.AUTOTUNE)
+            self.batch_size).prefetch(tf.data.experimental.AUTOTUNE)
 
         # Training loop
         for training_data in training_dataset:
@@ -113,7 +147,7 @@ class Agent:
         return np.mean(loss_array)  # return mean of loss array
 
     @tf.function
-    def train_step(self, current_states, next_states, action_tables, rewards, terminals):
+    def train_step(self, current_map_states, current_players_states, next_map_states,  next_players_states, action_tables, rewards, terminals):
         """
             train on a batch of data
 
@@ -125,15 +159,27 @@ class Agent:
 
         :return: loss
         """
-        q_current = self.model(current_states)   # Initialize the target q table with the current q table
-        q_next = self.model(next_states)         # Predict next q table
+        # -- initialize the target q table with the current q table
+        q_current = self.model({
+            'input1': current_map_states,
+            'input2': current_players_states,
+        })
+
+        # -- predict next q table
+        q_next = self.model({
+            'input1': next_map_states,
+            'input2': next_players_states,
+        })
 
         q_target = rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals
         q_target = tf.tile(q_target[..., tf.newaxis], (1, self.n_actions))
         q_target = tf.where(action_tables, q_target, q_current)
 
         with tf.GradientTape() as tape:
-            q_current = self.model(current_states)
+            q_current = self.model({
+                'input1': current_map_states,
+                'input2': current_players_states,
+            })
             loss = self.loss_fn(q_current, q_target)
 
         grads = tape.gradient(loss, self.model.trainable_weights)
@@ -163,8 +209,10 @@ class Agent:
 
         # -- choose action from model prediction
         else:
-            state = np.array([state])
-            action = self.model(state)
+            action = self.model({
+                'input1': np.asarray([state[0]]),
+                'input2': np.asarray([state[1]]),
+            })
             action = np.argmax(action)
 
         return action

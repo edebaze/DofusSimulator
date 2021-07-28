@@ -85,9 +85,7 @@ class Engine(object):
 # ======================================================================================================================
     # ENV SUB_METHODS
     def get_state(self) -> np.ndarray:
-        state = copy.copy(self.map.matrix).reshape(self.map.matrix.shape[0] * self.map.matrix.shape[1] * self.map.matrix.shape[2])
-        state = np.concatenate([state, self.get_players_state()])
-        return state
+        return np.asarray([self.map.matrix, self.get_players_state()])
 
     def get_done(self):
         if self.turn >= self.MAX_TURN_GAME:
