@@ -116,14 +116,9 @@ class Agent:
 
         # ------------------------------------------------------------------------
         mondel_concat = concatenate([model_cnn.output, model_fc.output], axis=1)
-<<<<<<< HEAD
-        x = Dense(256, activation="relu")(mondel_concat)
-        x = Dense(256, activation="relu")(x)
-=======
         x = mondel_concat
         for layer in self.output_block_structure:
             x = self.create_layer(layer, x)
->>>>>>> af62abde0b48a482c2f8a698f85d8c33b9185630
         model_outputs = Dense(self.n_actions, activation=None)(x)
 
         model = Model(inputs=[model_cnn.input, model_fc.input], outputs=model_outputs)
