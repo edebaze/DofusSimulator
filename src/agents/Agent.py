@@ -99,7 +99,7 @@ class Agent:
 
         # ------------------------------------------------------------------------
         mondel_concat = concatenate([model_cnn.output, model_fc.output], axis=1)
-        x = Dense(512, activation="relu")(mondel_concat)
+        x = Dense(256, activation="relu")(mondel_concat)
         x = Dense(256, activation="relu")(x)
         model_outputs = Dense(self.n_actions, activation=None)(x)
 
