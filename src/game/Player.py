@@ -78,7 +78,6 @@ class Player:
             deactivate player when his turn ends
         """
         if self.is_current_player:
-            self.reward += RewardList.ROUND_START   # remove reward at the end of a round
             self.is_current_player = False          # remove as current player
 
         self.pa = self.BASE_PA

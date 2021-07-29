@@ -131,7 +131,7 @@ class Agent:
         """
         self.memory.store_transition(state, action_table, reward, new_state, done)
 
-    def update_memory(self, new_state, reward):
+    def update_memory(self, new_state=None, reward=None):
         self.memory.update_memory(new_state=new_state, reward=reward)
 
     def train_on_memory(self):
@@ -209,8 +209,12 @@ class Agent:
         """
         # -- choose random action (if random is allowed)
         if np.random.random() < self.epsilon and allow_random:
-            action = np.random.choice(self.actions)
-            while action in self.blocked_actions and len(self.blocked_actions) != self.n_actions:
+            if len(self.blocked_actions) != self.n_actions:
+                actions = copy.copy(self.actions)
+                for blocked_action in self.blocked_actions:
+                    actions.remove(blocked_action)
+                action = np.random.choice(actions)
+            else:
                 action = np.random.choice(self.actions)
 
         # -- choose action from model prediction

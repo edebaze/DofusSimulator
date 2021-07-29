@@ -48,6 +48,8 @@ class Engine(object):
 
             self.end_turn()
 
+        self.add_end_game_reward()
+
         player_1 = self.players[0]
         player_2 = self.players[1]
 
@@ -72,13 +74,6 @@ class Engine(object):
         if done:
             # -- stop continue playing
             continue_playing = False
-            
-            # -- if game has stopped because the max turn was reached
-            if self.turn >= self.MAX_TURN_GAME:
-                # -- add max turn reward to the current reward and all players total score
-                reward += RewardList.REACH_MAX_TURN
-                for player in self.players:
-                    player.score += RewardList.REACH_MAX_TURN
 
         return state, reward, done, continue_playing
 
@@ -106,6 +101,22 @@ class Engine(object):
 
     def get_reward(self) -> int:
         return self.current_player.get_reward()
+
+    def add_end_game_reward(self):
+        end_game_reward = 0
+
+        # -- remove number of turns reward from reward
+        end_game_reward += self.turn * RewardList.ROUND_START
+
+        # -- if game has stopped because the max turn was reached
+        if self.turn >= self.MAX_TURN_GAME:
+            # -- add max turn reward to the current reward and all players total score
+            end_game_reward += RewardList.REACH_MAX_TURN
+
+        # -- add end_game_reward to all players
+        for player in self.players:
+            player.agent.memory.update_memory(reward=end_game_reward)
+            player.score += end_game_reward
 
     def create_players(self):
         self.players = []

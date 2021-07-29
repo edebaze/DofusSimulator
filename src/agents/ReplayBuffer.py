@@ -21,7 +21,7 @@ class ReplayBuffer:
 
         # Memory of STATES
         self.map_memory = np.zeros((self.mem_size, *input_dim[0]), dtype=np.float)                  # memory of map states
-        self.new_map_memory = np.zeros((self.mem_size, *input_dim[0]), dtype=np.float)              # memory of map states after taken action
+        self.new_map_memory = np.zeros((self.mem_size, *input_dim[0]), dtype=np.float32)              # memory of map states after taken action
         self.players_state_memory = np.zeros((self.mem_size, *input_dim[1]), dtype=np.float)        # memory of players states
         self.new_players_state_memory = np.zeros((self.mem_size, *input_dim[1]), dtype=np.float)    # memory of players states after taken action
 
@@ -30,16 +30,19 @@ class ReplayBuffer:
         self.reward_memory = np.zeros(self.mem_size, dtype=np.float)                                # memory of rewards of action taken at state i
         self.terminal_memory = np.zeros(self.mem_size, dtype=np.float)                              # BOOL : game done or not at state i
 
-    def update_memory(self, new_state, reward):
+    def update_memory(self, new_state=None, reward=None):
         """ when a player starts his turn : update new_state_memory and reward of last turn """
         if self.mem_cnter == 0:
             return
 
         index = (self.mem_cnter - 1) % self.mem_size
 
-        self.new_map_memory[index] = new_state[0]
-        self.new_players_state_memory[index] = new_state[1]
-        self.reward_memory[index] += reward
+        if new_state is not None:
+            self.new_map_memory[index] = new_state[0]
+            self.new_players_state_memory[index] = new_state[1]
+
+        if reward is not None:
+            self.reward_memory[index] += reward
 
     def store_transition(self, state, action_table, reward, new_state, done):
         """
