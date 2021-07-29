@@ -6,6 +6,8 @@ from tensorflow.keras.layers import Dense, Input, Conv2D, Flatten, MaxPooling2D,
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import to_categorical
+
+import copy
 import numpy as np
 
 import pdb
@@ -14,7 +16,7 @@ import pdb
 class Agent:
     EPOCHS = 5
     LR = 3e-4
-    BATCH_SIZE = 128
+    BATCH_SIZE = 64
 
     MEM_SIZE = 1e6              # size of the memory tables
     GAMMA = 0.9                 # percentage of the past reward to add to the current reward in the Q-table
@@ -27,9 +29,12 @@ class Agent:
 
     def __init__(
         self,
-        actions,
+        actions: list = [],
+        permanently_blocked_actions: list = [],
         is_activated: bool = True,
-        model_structure: list = [],
+        cnn_model_structure: list = [],
+        fc_model_structure: list = [],
+        output_block_structure: list = [],
         input_dim=[],
         model: Model = None,
         epochs=EPOCHS,
@@ -46,15 +51,19 @@ class Agent:
     ):
 
         self.is_activated: bool = is_activated  # is the agent auto playing or not
-        self.input_dim: tuple = input_dim       # dimension of the input data
+        self.input_dim = input_dim              # dimension of the input data
         self.actions = actions                  # array of actions that can be taken
+        self.permanently_blocked_actions: list = permanently_blocked_actions   # action  that are always blocked for the agent
         self.blocked_actions: list = []         # action  that are blocked for the agent
         self.n_actions = len(actions)           # number of actions
 
-        self.memory = ReplayBuffer(mem_size=mem_size, input_dim=self.input_dim, n_actions = self.n_actions)
+        self.mem_size = mem_size
+        self.memory: (None, ReplayBuffer) = None
 
         # Model description
-        self.model_structure = model_structure  # structure of the model
+        self.cnn_model_structure = cnn_model_structure  # structure of the CNN model
+        self.fc_model_structure = fc_model_structure    # structure of the FC model
+        self.output_block_structure = output_block_structure        # structure of the output block of the model
         self.gamma = gamma                      # percentage of the past reward to add to the current reward in the Q-table
         self.epsilon = epsilon                  # percentage of chances to take a random action
         self.epsilon_decay = epsilon_decay      # decrease of epsilon at each predictions
@@ -70,61 +79,72 @@ class Agent:
         self.loss_fn = tf.keras.losses.MeanSquaredError()
 
         # Model instantiation
-        self.model: Model = self.create_model() if model is None else model
+        self.model: (None, Model) = model
 
         # Load / Save model
         self.model_filename: str = model_filename
 
-    def create_model(self) -> Model:
+# ======================================================================================================================
+    # INIT METHODS
+    def initialize(self):
+        if self.memory is None:
+            self.memory = ReplayBuffer(mem_size=self.mem_size, input_dim=self.input_dim, n_actions=self.n_actions)
+
+        if self.model is None:
+            self.create_model()
+
+    def create_model(self):
         """
             Create prediction model
         """
         inputs1 = Input(self.input_dim[0], name='input1')
-        x = Conv2D(128, kernel_size=2, strides=1, activation="relu")(inputs1)
-        x = Conv2D(128, kernel_size=2, strides=1, activation="relu")(x)
-        x = MaxPooling2D(pool_size=2)(x)
-        x = Conv2D(256, kernel_size=2, strides=1, activation="relu")(x)
-        x = Conv2D(256, kernel_size=2, strides=1, padding='same', activation="relu")(x)
-        x = MaxPooling2D(pool_size=2)(x)
+        x = inputs1
+        for layer in self.cnn_model_structure:
+            x = self.create_layer(layer, x)
         outputs1 = Flatten()(x)
 
         model_cnn = Model(inputs1, outputs1)
 
         # ------------------------------------------------------------------------
         inputs2 = Input(self.input_dim[1], name='input2')
-        x = Dense(64, activation="relu")(inputs2)
-        outputs2 = Dense(64, activation="relu")(x)
+        x = inputs2
+        for layer in self.fc_model_structure:
+            x = self.create_layer(layer, x)
+        outputs2 = x
 
         model_fc = Model(inputs2, outputs2)
 
         # ------------------------------------------------------------------------
         mondel_concat = concatenate([model_cnn.output, model_fc.output], axis=1)
+<<<<<<< HEAD
         x = Dense(256, activation="relu")(mondel_concat)
         x = Dense(256, activation="relu")(x)
+=======
+        x = mondel_concat
+        for layer in self.output_block_structure:
+            x = self.create_layer(layer, x)
+>>>>>>> af62abde0b48a482c2f8a698f85d8c33b9185630
         model_outputs = Dense(self.n_actions, activation=None)(x)
 
         model = Model(inputs=[model_cnn.input, model_fc.input], outputs=model_outputs)
         model.compile(loss="mse", optimizer=Adam(learning_rate=self.lr))
-        return model
 
-    def create_fc_model(self) -> Model:
-        """
-            TODO : remove that
+        self.model = model
 
-            create a fully connected model (will be remove)
-        """
-        inputs = Input(self.input_dim)
+    @staticmethod
+    def create_layer(layer, prev_layer):
+        if layer['type'] == 'CNN':
+            return Conv2D(layer['size'], kernel_size=layer['kernel_size'], strides=layer['strides'],
+                       padding=layer['padding'], activation="relu")(prev_layer)
 
-        x = Dense(self.model_structure[0], activation="relu")(inputs)
-        for layer in self.model_structure[1:]:
-            x = Dense(layer, activation="relu")(x)
+        if layer['type'] == 'MaxPool':
+            return MaxPooling2D(pool_size=layer['pool_size'])(prev_layer)
 
-        outputs = Dense(self.n_actions, activation=None)(x)
+        if layer['type'] == 'FC':
+            return Dense(layer['size'], activation='relu')(prev_layer)
 
-        model = Model(inputs, outputs)
-        model.compile(loss="mse", optimizer=Adam(learning_rate=self.lr))
-        return model
-
+# ======================================================================================================================
+    # UPDATE MEMORY
     def store_transition(self, state, action_table, reward, new_state, done):
         """
         Store state and results at index i
@@ -134,6 +154,8 @@ class Agent:
     def update_memory(self, new_state=None, reward=None):
         self.memory.update_memory(new_state=new_state, reward=reward)
 
+# ======================================================================================================================
+    # TRAINING
     def train_on_memory(self):
         loss_array = []     # array of each batch loss used to calculate avg training loss
         
@@ -202,19 +224,17 @@ class Agent:
 
         else:
             self.epsilon = max(self.epsilon_end, self.epsilon*self.epsilon_decay)
-            
+
+# ======================================================================================================================
+    # ACTING IN ENVIRONMENT
     def choose_action(self, state, allow_random=True):
         """
             Choose an action from a state
         """
         # -- choose random action (if random is allowed)
         if np.random.random() < self.epsilon and allow_random:
-            if len(self.blocked_actions) != self.n_actions:
-                actions = copy.copy(self.actions)
-                for blocked_action in self.blocked_actions:
-                    actions.remove(blocked_action)
-                action = np.random.choice(actions)
-            else:
+            action = np.random.choice(self.actions)
+            while action in self.blocked_actions and len(self.blocked_actions) != self.n_actions:
                 action = np.random.choice(self.actions)
 
         # -- choose action from model prediction
@@ -225,6 +245,7 @@ class Agent:
             })
 
             actions = actions.numpy()[0]
+
             if len(self.blocked_actions) > 0:
                 min_reward = np.min(actions)
                 actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
@@ -232,12 +253,13 @@ class Agent:
 
         return action
 
+    def reset_blocked_actions(self):
+        self.blocked_actions = copy.copy(self.permanently_blocked_actions)
+
+# ======================================================================================================================
+    # UTILITY
     def save_model(self):
         self.model.save(self.model_filename)
 
     def load_model(self):
         self.model = tf.keras.models.load_model(self.model_filename)
-
-    @staticmethod
-    def choose_random_action(actions):
-        return np.random.choice(actions)

@@ -15,17 +15,14 @@ import time
 
 
 class Engine(object):
-    MAX_TURN_GAME = 50
-
-    def __init__(self, map_number: (None,int) = None, agents: list = [None, None], flag_create_dir: bool = True):
+    def __init__(self, map_number: (None,int) = None, players: list = [], max_turn_game: int = 50):
         self.__name__ = 'Engine'
         self.name                           = self.create_name()
         self.map_number: int                = map_number
 
         self.map: Map                       = Map(map_number)
-        self.players: list                  = []
+        self.players: list                  = players
         self.current_player: Player         = Player()
-        self.agents: list                   = agents
 
         self.actions: list                  = ActionList.get_actions()
         self.n_actions: int                 = len(self.actions)
@@ -34,12 +31,11 @@ class Engine(object):
 
         self.model_dir: str                 = os.path.join(MODEL_DIR, self.name)
 
-        if flag_create_dir:
-            make_dir(self.model_dir)
+        self.MAX_TURN_GAME: int             = max_turn_game
 
 # ======================================================================================================================
     def play_game(self):
-        self.reset()
+        self.initialize()
 
         while not self.get_done():
             continue_playing = True
@@ -54,6 +50,31 @@ class Engine(object):
         player_2 = self.players[1]
 
         return player_1.score, player_2.score
+
+    def initialize(self):
+        self.create_players()
+        self.init_agents()
+
+    def init_agents(self):
+        for player in self.players:
+            agent = player.agent
+
+            if agent is None:
+                continue
+
+            if len(agent.input_dim) == 0:
+                state = self.get_state()
+                agent.input_dim = [state[0].shape, state[1].shape]
+
+            if len(agent.actions) == 0:
+                agent.actions = self.actions
+                agent.n_actions = len(self.actions)
+
+            if agent.model_filename == '':
+                player.agent.model_filename = os.path.join(self.model_dir, f'player_{player.index + 1}.h5')
+                make_dir(self.model_dir)
+
+            agent.initialize()  # init agent if necessary (model, memory...)
 
 # ======================================================================================================================
     # ENV METHODS
@@ -115,43 +136,32 @@ class Engine(object):
 
         # -- add end_game_reward to all players
         for player in self.players:
-            player.agent.memory.update_memory(reward=end_game_reward)
+            player.agent.update_memory(reward=end_game_reward)
             player.score += end_game_reward
 
     def create_players(self):
-        self.players = []
-
-        self.add_player(team=1, class_name=ClassList.IOP)
-        self.add_player(team=2, class_name=ClassList.CRA)
+        for player in self.players:
+            self.add_player(player)
 
         # -- set first player as current player
         self.current_player = self.players[0]
         self.current_player.activate()
         self.map.create_player_mask_pm(self.current_player)
 
-    def add_player(self, team, class_name=ClassList.IOP):
-        index_player = len(self.players)
+    def add_player(self, player: Player):
+        index_player = self.players.index(player)
 
-        agent = self.agents[index_player]
+        box_x, box_y = self.map.get_initial_player_placement(player.team)
 
-        if agent is not None:
-            agent.model_filename = os.path.join(self.model_dir, f'player_{index_player+1}.h5')
+        # -- set player
+        player.name = 'Player ' + str(index_player+1)
+        player.index = index_player
+        if player.box_x is None :
+            player.box_x = box_x
+        if player.box_y is None:
+            player.box_y = box_y
 
-        player_name = 'Player ' + str(index_player+1)
-
-        box_x, box_y = self.map.get_initial_player_placement(team)
-
-        # -- create_player
-        player = Player(index_player, class_name=class_name, agent=agent)
-        if class_name == ClassList.IOP:
-            player.pm += 1
-            player.hp += 50
-        player.name = player_name
-        player.team = team
-        player.box_x = box_x
-        player.box_y = box_y
         self.map.place_player(player, flag_set_mask_pm=False)
-        self.players.append(player)
 
 # ======================================================================================================================
     # TURN
@@ -246,9 +256,9 @@ class Engine(object):
         :return:
         """
         # -- reset blocked actions if movement is successful
-        player.agent.blocked_actions = []
+        player.agent.reset_blocked_actions()
 
-        # -- remove 1 PM
+        # -- remove PMs
         player.pm -= pm_used
 
         # -- place player on the map
@@ -405,6 +415,7 @@ class Engine(object):
         player.pa -= spell.pa  # use PA
         self.deselect_spell()
 
+    # __________________________________________________________________________________________________________________
     def hit(self, player: Player, spell: Spell, dist=0):
         """
             current player is hitting an other player with current selected spell

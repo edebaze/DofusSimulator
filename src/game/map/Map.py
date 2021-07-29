@@ -68,7 +68,7 @@ class Map:
             min_y = 1
             max_y = 2
         else:
-            print('ERROR placing player of team', team)
+            print(f'ERROR team ({team}) is not == 1 or == 2')
             return
 
         # -- choose random box
@@ -438,6 +438,13 @@ class Map:
         index_item = self.item_values.index(item_value)
         positions = np.argwhere(self.matrix[:, :, index_item] == 1)
         return positions[:, ::-1]   # !!! do not forget to reverse positions to return box_x box_y
+
+    # __________________________________________________________________________________________________________________
+    def get_random_empty_position(self):
+        """ get box_x, box_y of a box that is empty"""
+        positions = self.get_item_positions(MapItemList.EMPTY)
+        rand_index = np.random.choice(np.arange(len(positions)))
+        return positions[rand_index]
 
 ########################################################################################################################
     # DEBUG
