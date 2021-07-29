@@ -24,7 +24,7 @@ if __name__ == '__main__':
     )
 
     agent2 = Agent(
-        is_activated=False,
+        is_activated=True,
         mem_size=1,
         input_dim=[state[0].shape, state[1].shape],
         actions=env.actions,

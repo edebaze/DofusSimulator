@@ -19,17 +19,18 @@ class Player:
     MAX_PM = 6
     MAX_PO = 6
 
-    def __init__(self, index: int = 0, class_name: str = '', agent: (None, Agent) = None):
+    def __init__(self, index: int = 0, class_name: str = '', team: int = 0, agent: (None, Agent) = None,
+                 BASE_HP: int = 100, BASE_PA: int = 7, BASE_PM: int = 3, BASE_PO: int = 1):
         # Identity
-        self.agent = agent
+        self.agent: Agent = agent
         self.class_: Class = ClassList.get(class_name) if class_name != '' else None
         self.index: int = index
-        self.team: int = 0
+        self.team: int = team
         self.name: str = ''
 
         # MAP position
-        self.box_x: int = 0
-        self.box_y: int = 0
+        self.box_x: (None, int) = None
+        self.box_y: (None, int) = None
         self.item_value = MapItemList.get_player_value(index)
 
         # Canvas items
@@ -38,14 +39,14 @@ class Player:
 
         # Statistics
         self.is_dead: bool = False
-        self.BASE_HP = 100          # initial HP of the player
-        self.BASE_PA = 7            # initial PA of the player
-        self.BASE_PM = 3            # initial PM of the player
-        self.BASE_PO = 2            # initial PO of the player
-        self.hp = self.BASE_HP      # current HP of the player
-        self.pa = self.BASE_PA      # current PA of the player
-        self.pm = self.BASE_PM      # current PM of the player
-        self.po = self.BASE_PO      # current PO of the player
+        self.BASE_HP = BASE_HP                  # initial HP of the player
+        self.BASE_PA = BASE_PA                  # initial PA of the player
+        self.BASE_PM = BASE_PM                  # initial PM of the player
+        self.BASE_PO = BASE_PO                  # initial PO of the player
+        self.hp = self.BASE_HP                  # current HP of the player
+        self.pa = self.BASE_PA                  # current PA of the player
+        self.pm = self.BASE_PM                  # current PM of the player
+        self.po = self.BASE_PO                  # current PO of the player
 
         # Agent state
         self.last_action: int = ActionList.END_TURN     # last action taken this turn
@@ -63,6 +64,29 @@ class Player:
 
 # ======================================================================================================================
     # INITIALIZATION
+    def reset(self, index=None):
+        if index is not None:
+            self.index = index
+
+        self.box_x = None
+        self.box_y = None
+        self.item_value = MapItemList.get_player_value(self.index)
+
+        self.tk_img = None              # image of the player (PhotoImage object)
+        self.label = None               # label of the image in Canvas
+
+        self.is_dead = False
+        self.hp = self.BASE_HP          # current HP of the player
+        self.pa = self.BASE_PA          # current PA of the player
+        self.pm = self.BASE_PM          # current PM of the player
+        self.po = self.BASE_PO          # current PO of the player
+
+        self.score = 0
+        self.reward = 0                 # reward of the last action
+        self.num_actions_in_turn = 0    # number of actions taken during the turn
+
+        self.selected_spell = None
+
     def activate(self):
         """
             activate player when his turn begins
@@ -70,16 +94,14 @@ class Player:
         self.last_action = ActionList.END_TURN  # reset last action taken this turn
         self.is_current_player = True           # set as current player this turn
         if self.agent is not None:
-            self.agent.blocked_actions = []         # reset blocked actions
+            self.agent.reset_blocked_actions()
         return
 
     def deactivate(self):
         """
             deactivate player when his turn ends
         """
-        if self.is_current_player:
-            self.is_current_player = False          # remove as current player
-
+        self.is_current_player = False          # remove as current player
         self.pa = self.BASE_PA
         self.pm = self.BASE_PM
         self.num_actions_in_turn = 0
@@ -99,7 +121,7 @@ class Player:
         return reward
 
 # ======================================================================================================================
-    # ACTIONS
+    # SPELLS
     def select_spell(self, spell: Spell):
         self.deselect_spell()
 
