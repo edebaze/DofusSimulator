@@ -8,6 +8,9 @@ SRC_DIRNAME = 'src'
 ROOT_DIR: str = str(currentdir.split('src')[0])
 SRC_DIR = os.path.join(ROOT_DIR, SRC_DIRNAME)
 
+# TRAINING
+TRAINING_DIR = os.path.join(SRC_DIR, 'training')
+
 # MODELS
 MODEL_DIR = os.path.join(ROOT_DIR, 'models')
 MODEL_EXCEL_FILE = os.path.join(MODEL_DIR, 'models.xlsx')

@@ -17,7 +17,7 @@ MODULO_TRAIN = 10           # train bot each N games
 MODULO_WATCH = 500          # watch bots on GUI each N games
 MODULO_SAVE = 200           # save models each N games
 
-MAP_NUMBER = 2
+MAP_NUMBER = 1
 
 CNN_STRUCTURE = [
     {'type': 'CNN', 'size': 128, 'kernel_size': 2, 'strides': 1, 'padding': 'valid'},
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     for i in range(NUM_GAMES):
         # ==============================================================================================================
         # RESET ENV
-        player_1 = Player(class_name=ClassList.IOP, team=1, agent=agent1, BASE_HP=150, BASE_PM=4)
-        player_2 = Player(class_name=ClassList.CRA, team=2, agent=agent2, BASE_HP=100, BASE_PM=3)
+        player_1 = Player(class_name=ClassList.IOP, team=1, agent=agent1, BASE_HP=50, BASE_PM=4)
+        player_2 = Player(class_name=ClassList.CRA, team=2, agent=agent2, BASE_HP=50, BASE_PM=3)
         env = Engine(MAP_NUMBER, [player_1, player_2])
 
         # ==============================================================================================================

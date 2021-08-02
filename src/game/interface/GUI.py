@@ -13,7 +13,7 @@ import pdb
 
 
 class GUI:
-    SLEEP_TIME = 1
+    SLEEP_TIME = 0.1
 
     def __init__(self, engine: Engine):
         self.engine: Engine = engine
@@ -34,11 +34,6 @@ class GUI:
         self.root = Tk()
         self.canvas = Canvas(self.root, width=self.map.WIDTH + self.map.PADDING, height=self.map.HEIGHT + self.info_bar.HEIGHT, bg='white')
         self.is_destroyed = False
-
-        # -------------------------------------------------------------
-        # RESET ENGINE
-        self.engine.reset()
-        self.engine.root = self.root
 
         # -------------------------------------------------------------
         # RESET CONTROLS
@@ -301,7 +296,7 @@ class GUI:
         self.add_info(player)           # display player info to the info_bar
         self.set_click_key_bindings()   # set key bindings
         self.bind_movements()           # bind movement keys
-        self.set_hover(player)          # create hover bindings$
+        self.set_hover(player)          # create hover bindings
 
     # __________________________________________________________________________________________________________________
     def deactivate_player(self, player):

@@ -35,8 +35,6 @@ class Engine(object):
 
 # ======================================================================================================================
     def play_game(self):
-        self.initialize()
-
         while not self.get_done():
             continue_playing = True
             while continue_playing:
@@ -86,8 +84,6 @@ class Engine(object):
 
     def step(self, action):
         continue_playing = self.do(action)
-        if continue_playing:
-            continue_playing = self.current_player.continue_playing
 
         (state, reward, done) = (self.get_state(), self.get_reward(), self.get_done())
 
@@ -193,7 +189,7 @@ class Engine(object):
         state = self.get_state()  # -- get initial state of the turn
 
         if action is None:
-            action = agent.choose_action(state)
+            action = agent.choose_action(state=state, show_q_table=self.current_player.print_mode_active)
 
         new_state, reward, done, continue_playing = self.step(action)
         
@@ -559,4 +555,4 @@ class Engine(object):
         else:
             print(f'Unkown action {action}')
 
-        return True
+        return player.continue_playing
