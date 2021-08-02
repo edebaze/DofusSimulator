@@ -127,7 +127,7 @@ class Engine(object):
         end_game_reward = 0
 
         # -- remove number of turns reward from reward
-        end_game_reward += self.turn * RewardList.ROUND_START
+        end_game_reward += (self.MAX_TURN_GAME - self.turn) * -RewardList.ROUND_START
 
         # -- if game has stopped because the max turn was reached
         if self.turn >= self.MAX_TURN_GAME:

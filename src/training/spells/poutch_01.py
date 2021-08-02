@@ -32,7 +32,7 @@ import random
 NUM_GAMES = 500000
 MODULO_TRAIN = 10  # train bot each N games
 MODULO_WATCH = 500  # watch bots on GUI each N games
-MODULO_SAVE = 200  # save models each N games
+MODULO_SAVE = 500000  # save models each N games
 
 MAP_NUMBER = 1
 
@@ -73,11 +73,11 @@ if __name__ == '__main__':
     scores = []
     scores_2 = []
 
-    model_iop = keras.models.load_model(os.path.join(MODEL_DIR, 'saved', 'iop_1.h5'))
-    model_cra = keras.models.load_model(os.path.join(MODEL_DIR, 'saved', 'cra_1.h5'))
+    # model_iop = keras.models.load_model(os.path.join(MODEL_DIR, 'saved', 'iop_1.h5'))
+    # model_cra = keras.models.load_model(os.path.join(MODEL_DIR, 'saved', 'cra_1.h5'))
 
-    # -- create agent 1
-    agent1 = Agent(
+    # -- create agent
+    agent = Agent(
         is_activated=True,
         cnn_model_structure=CNN_STRUCTURE,
         fc_model_structure=FC_MODEL_STRUCTURE,
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     for i in range(NUM_GAMES):
         # ==============================================================================================================
         # RESET ENV
-        player = Player(class_name=ClassList.IOP, team=1, agent=agent1, BASE_HP=150, BASE_PM=4)
+        player = Player(class_name=ClassList.IOP, team=1, agent=agent, BASE_HP=150, BASE_PM=4)
         poutch = Player(
             class_name=ClassList.CRA,
             team=2,
@@ -125,16 +125,18 @@ if __name__ == '__main__':
         # TRAIN MODELS
         if i % MODULO_TRAIN == 0 and i != 0:
             # -- train model on the memory
-            loss = agent1.train_on_memory()
+            loss = agent.train_on_memory()
             # -- set loss display to red if loss is increasing and to green if loss is decreasing
-            color = colorama.Fore.RED if last_loss < loss else colorama.Fore.GREEN
-            last_loss = loss
+            color = colorama.Fore.RED
+            if loss is not None:
+                color = colorama.Fore.RED if last_loss < loss else colorama.Fore.GREEN
+                last_loss = loss
 
             # -- apply changes to epsilon on agents
-            agent1.apply_epsilon_decay()
+            agent.apply_epsilon_decay()
 
             # -- display result of the training to the console
-            print('P1 loss:', color, '%.2f' % loss, colorama.Fore.RESET, '| epsilon %.2f' % agent1.epsilon)
+            print('P1 loss:', color, '%.2f' % loss, colorama.Fore.RESET, '| epsilon %.2f' % agent.epsilon)
             print('==============================================================================================================')
 
         # ==============================================================================================================
@@ -156,7 +158,7 @@ if __name__ == '__main__':
                 # data['model_filename'] = agent.model_filename
                 # data['score'] = score if player.index == 0 else score_2
                 # data['avg_score'] = avg_score if player.index == 0 else avg_score_2
-                # data['epsilon'] = agent1.epsilon if player.index == 0 else agent2.epsilon
+                # data['epsilon'] = agent.epsilon if player.index == 0 else agent2.epsilon
 
                 # # -- env
                 # data['turn'] = env.turn
