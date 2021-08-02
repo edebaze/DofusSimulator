@@ -34,13 +34,13 @@ class Trainer:
 
     def __init__(self) -> None:
         self.training_modules: dict = {
-            'spells': {
+            'poutch': {
                 'poutch_01': 5000,
             }
         }
 
         self.batch_size = 64
-        self.lr = 1e-3
+        self.lr = 3e-4
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.training_data = None
@@ -61,17 +61,23 @@ class Trainer:
                         module += '.' + sub_module
                         self.train_on_module(agent, spell=spell, class_name=class_name, module=module, n_games=n_games)
 
-    def train_on_module(self, agent: Agent, spell: int, class_name: str, module: str, n_games: int):
+            elif module == 'poutch':
+                for sub_module, n_games in n_games.items():
+                    module += '.' + sub_module
+                    self.train_on_module(agent, class_name=class_name, module=module, n_games=n_games)
+
+    def train_on_module(self, agent: Agent, module: str, **kwargs):
         """
             train agent on a specific training module
-        :param agent:   agent to train
-        :param spell:
-        :param module:
-        :param n_games:
+        :param agent:       agent to train
+        :param spell:       specific spell to train on
+        :param class_name:  name of the class of the Agent
+        :param module:      module of training
+        :param n_games:     number of game on the training
         :return:
         """
         module = self.load_training_module(module)
-        module.train(agent=agent, spell=spell, class_name=class_name, n_games=n_games)
+        module.train(agent=agent, **kwargs)
 
     def learning_rate_scheduler(self):
         return self.lr

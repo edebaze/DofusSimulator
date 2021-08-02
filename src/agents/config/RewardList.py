@@ -4,7 +4,7 @@ import inspect
 class RewardList:
     KILL = 500                  # reward for killing an enemy
     DIE = 0                     # reward for dying
-    REACH_MAX_TURN = 0          # reward for ending game with max turn
+    REACH_MAX_TURN = -200          # reward for ending game with max turn
 
     DAMAGES = 3                 # reward for doing 1 damage
     HP_LOSS = 0                 # reward for losing 1 hp
