@@ -231,7 +231,7 @@ class Agent:
 
 # ======================================================================================================================
     # ACTING IN ENVIRONMENT
-    def choose_action(self, state, allow_random=True):
+    def choose_action(self, state, allow_random=True, show_q_table=False):
         """
             Choose an action from a state
         """
@@ -249,10 +249,15 @@ class Agent:
             })
 
             actions = actions.numpy()[0]
+            if show_q_table:
+                print('Q_TABLE :', actions)
 
             if len(self.blocked_actions) > 0:
                 min_reward = np.min(actions)
                 actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
+                if show_q_table:
+                    print('BLOCKED_Q_TABLE :', actions)
+
             action = np.argmax(actions)
 
         return action

@@ -1,3 +1,4 @@
+from game import Player
 from globals.path import *
 from game.Engine import Engine
 from game.interface.GUI import GUI
@@ -33,7 +34,11 @@ if __name__ == '__main__':
         model=model_cra,
     )
 
-    env = Engine(map_number=MAP_NUMBER, agents=[agent1, agent2], flag_create_dir=False)
+    player_1 = Player(class_name=ClassList.IOP, team=1, agent=agent1, BASE_HP=50, BASE_PM=4)
+    player_2 = Player(class_name=ClassList.CRA, team=2, agent=agent2, BASE_HP=50, BASE_PM=3)
+
+    env = Engine(map_number=MAP_NUMBER, players=[player_1, player_2])
+    env.initialize()
     gui = GUI(env)
     gui.reset()
     gui.render()

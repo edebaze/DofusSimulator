@@ -10,9 +10,9 @@ class RewardList:
     HP_LOSS = 0                 # reward for losing 1 hp
 
     ROUND_START = 0             # reward when the round starts
-    BAD_MOVEMENT = 0            # reward for making a bad movement action
-    BAD_SPELL_CASTING = 0       # reward for casting a spell without being in enemy's range
-    BAD_SPELL_SELECTION = 0     # reward for trying to cast a spell without the necessary amount of PA
+    BAD_MOVEMENT = -50            # reward for making a bad movement action
+    BAD_SPELL_CASTING = -100       # reward for casting a spell without being in enemy's range
+    BAD_SPELL_SELECTION = -50     # reward for trying to cast a spell without the necessary amount of PA
 
     @staticmethod
     def get_rewards_dict():

@@ -24,8 +24,6 @@ class Map:
 
         self.BOX_WIDTH: int     = 0         # number of boxes on x
         self.BOX_HEIGHT: int    = 0         # number of boxes on y
-        self.WIDTH: int         = 0         # map width in pixel
-        self.HEIGHT: int        = 0         # map height in pixel
 
         self.create()
 
@@ -44,11 +42,6 @@ class Map:
 
             self.BOX_WIDTH = len(self.matrix[0])
             self.BOX_HEIGHT = len(self.matrix)
-            self.WIDTH = self.BOX_WIDTH * self.BOX_DIM
-            self.HEIGHT = self.BOX_HEIGHT * self.BOX_DIM
-
-        else:
-            self.create_random_map(width=self.BOX_WIDTH)
 
     # __________________________________________________________________________________________________________________
     def get_initial_player_placement(self, team):
@@ -209,19 +202,8 @@ class Map:
             )
 
     # __________________________________________________________________________________________________________________
-    def create_mask_range(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 1, with_ldv=False):
-        """
-            create a mask on the map
-
-        :param item_value: value of the mask item in MapItemList
-        :param box_x: center of the mask on x
-        :param box_y: center of the mask on y
-        :param n_box_max: max size of the mask
-        :param n_box_min: min size of the mask
-        :return:
-        """
-
-        item_index = self.item_values.index(item_value)
+    def get_positions_in_range(self, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 1):
+        positions = []
         y = box_y - n_box_max
 
         n_box_row = 0  # number of boxes to create on the current row
@@ -239,9 +221,9 @@ class Map:
                     skip = False
                     # -- block, void or outside the map
                     box_content = self.box_content(x, y)
-                    if box_content is None:         # check is in map
+                    if box_content is None:                         # check is in map
                         skip = True
-                    elif box_content[self.item_block_index] == 1:   # check is block
+                    elif box_content[self.item_block_index] == 1:  # check is block
                         skip = True
                     elif box_content[self.item_void_index] == 1:    # check is void
                         skip = True
@@ -250,12 +232,8 @@ class Map:
                     if abs(y - box_y) + abs(x - box_x) < n_box_min:
                         skip = True
 
-                    # -- check if in ldv
-                    if not self.is_in_ldv(box_x, box_y, box_target_x=x, box_target_y=y):
-                        skip = True
-
                     if not skip:
-                        self.matrix[y, x, item_index] = 1
+                        positions.append((x, y))
 
                     x += 1
 
@@ -265,6 +243,35 @@ class Map:
                 n_box_row += 1  # increase number of boxes by row
 
             y += 1
+
+        return positions
+
+    # __________________________________________________________________________________________________________________
+    def create_mask_range(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 1, with_ldv=False):
+        """
+            create a mask on the map
+
+        :param item_value: value of the mask item in MapItemList
+        :param box_x: center of the mask on x
+        :param box_y: center of the mask on y
+        :param n_box_max: max size of the mask
+        :param n_box_min: min size of the mask
+        :return:
+        """
+
+        item_index = self.item_values.index(item_value)
+
+        positions = self.get_positions_in_range(box_x, box_y, n_box_max=n_box_max, n_box_min=n_box_min)
+
+        for position in positions:
+            x = position[0]
+            y = position[1]
+
+            # -- check if in ldv
+            if with_ldv and not self.is_in_ldv(box_x, box_y, box_target_x=x, box_target_y=y):
+                continue
+
+            self.matrix[y, x, item_index] = 1
 
     # __________________________________________________________________________________________________________________
     def create_mask_line(self, item_value: int, box_x: int, box_y: int, n_box_max: int, n_box_min: int = 0, with_ldv: bool = False):
@@ -439,12 +446,22 @@ class Map:
         positions = np.argwhere(self.matrix[:, :, index_item] == 1)
         return positions[:, ::-1]   # !!! do not forget to reverse positions to return box_x box_y
 
-    # __________________________________________________________________________________________________________________
-    def get_random_empty_position(self):
-        """ get box_x, box_y of a box that is empty"""
+########################################################################################################################
+    # GET RANDOM INIT POSITION
+    def get_random_position(self):
+        """ get box_x, box_y of a random empty box """
         positions = self.get_item_positions(MapItemList.EMPTY)
         rand_index = np.random.choice(np.arange(len(positions)))
         return positions[rand_index]
+
+    # __________________________________________________________________________________________________________________
+    def get_random_position_in_range(self, box_x, box_y, range_max, rang_min):
+        """ get position in range of requested box """
+        positions = self.get_positions_in_range(box_x=box_x, box_y=box_y, n_box_max=range_max, n_box_min=rang_min)
+        if (box_x, box_y) in positions:
+            positions.remove((box_x, box_y))
+
+        return positions[np.random.randint(0, len(positions))]
 
 ########################################################################################################################
     # DEBUG
@@ -472,20 +489,6 @@ class Map:
             matrix[tuple(pos[::-1])] = 1
 
         print(matrix)
-
-    # __________________________________________________________________________________________________________________
-    def generate_random_map(self):
-        matrix = np.zeros((self.BOX_WIDTH, self.BOX_HEIGHT))
-
-        # -- set map borders
-        matrix[0, :] = 1
-        matrix[:, 0] = 1
-        matrix[:, -1] = 1
-        matrix[-1, :] = 1
-
-        for i in range(self.BOX_WIDTH):
-            for j in range(self.BOX_HEIGHT):
-                continue
 
     @staticmethod
     def get_selected_box(event):
@@ -531,6 +534,47 @@ class Map:
         return new_map
 
     # __________________________________________________________________________________________________________________
-    @staticmethod
-    def create_random_map(width, height, void=True, blocs=True):
-        return
+    def create_random_map(self, width, height, void_prob=0, blocs_prob=0, item_values=[]):
+        if len(item_values) == 0:
+            item_values = MapItemList.get_item_values()
+
+        self.BOX_WIDTH = width
+        self.BOX_HEIGHT = height
+
+        index_empty = item_values.index(MapItemList.EMPTY)
+
+        index_void = item_values.index(MapItemList.VOID)
+        void_array = np.zeros(len(item_values))
+        void_array[index_void] = 1
+
+        index_block = item_values.index(MapItemList.BLOCK)
+        block_array = np.zeros(len(item_values))
+        block_array[index_block] = 1
+
+        # create empty map with void around
+        matrix = np.zeros((width, height, len(item_values)))
+        matrix[:, :, index_empty] = 1
+        matrix[0, :] = void_array
+        matrix[-1, :] = void_array
+        matrix[:, 0] = void_array
+        matrix[:, -1] = void_array
+
+        if void_prob > 0 or blocs_prob > 0:
+            for y in range(1, height-1):
+                for x in range(1, width-1):
+                    prob = random.random()
+                    if prob <= void_prob:
+                        matrix[y, x] = void_array
+                    elif prob <= void_prob + blocs_prob:
+                        matrix[y, x] = block_array
+
+        self.matrix = matrix
+
+    # __________________________________________________________________________________________________________________
+    @property
+    def WIDTH(self):
+        return self.BOX_WIDTH * self.BOX_DIM
+
+    @property
+    def HEIGHT(self):
+        return self.BOX_HEIGHT * self.BOX_DIM

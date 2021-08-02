@@ -3,7 +3,7 @@ from game.actions.ActionList import ActionList
 
 
 class Poutch(Agent):
-    def choose_action(self, state=None, allow_random=True):
+    def choose_action(self, **kwargs):
         return ActionList.END_TURN
 
     def create_model(self):
