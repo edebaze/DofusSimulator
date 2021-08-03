@@ -117,7 +117,7 @@ class GUI:
 
     def set_click_key_bindings(self):
         self.canvas.bind("<Button-1>", self.move_to_position)
-        self.root.bind("<Button-3>", self.map.get_box_content)
+        self.root.bind("<Button-3>", self.map.display_box_content)
 
     def set_hover(self, player):
         player.label.bind('<Enter>', self.create_mask_pm)
