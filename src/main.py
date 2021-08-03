@@ -1,6 +1,7 @@
 from game import Player
 from globals.path import *
 from game.Engine import Engine
+from game.classes import ClassList
 from game.interface.GUI import GUI
 from agents import Agent
 from tensorflow import keras
@@ -8,7 +9,7 @@ from tensorflow import keras
 MAP_NUMBER = 2
 
 if __name__ == '__main__':
-    env = Engine(map_number=MAP_NUMBER, flag_create_dir=False)
+    env = Engine(map_number=MAP_NUMBER)
     state = env.reset()
 
     model_iop = keras.models.load_model(os.path.join(MODEL_DIR, 'saved', 'iop_2.h5'))

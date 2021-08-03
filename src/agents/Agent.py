@@ -246,8 +246,6 @@ class Agent:
             if len(self.blocked_actions) > 0:
                 min_reward = np.min(actions)
                 actions[self.blocked_actions] = min_reward - 1      # set blocked action below min reward
-                if show_q_table:
-                    print('BLOCKED_Q_TABLE :', actions)
 
             action = np.argmax(actions)
 
