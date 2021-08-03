@@ -16,7 +16,7 @@ from game.classes import ClassList
 from game.spells import SpellList, Spell
 from game.actions.ActionList import ActionList
 from agents import Agent
-from agents.pnj_agents import Poutch
+from agents.ia import Poutch
 
 import tensorflow as tf
 from tensorflow import keras

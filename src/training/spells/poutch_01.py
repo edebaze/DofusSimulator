@@ -16,7 +16,7 @@ from game.classes import ClassList
 from game.spells import SpellList, Spell
 from game.actions.ActionList import ActionList
 from agents import Agent
-from agents.pnj_agents import Poutch
+from agents.ia import Poutch
 
 import tensorflow as tf
 from tensorflow import keras
@@ -199,9 +199,32 @@ def render(engine):
 
 
 def save(engine):
+    # if os.path.isfile(MODEL_EXCEL_FILE):
+    #     excel_content = pd.read_excel(MODEL_EXCEL_FILE)
+    # else:
+    #     excel_content = pd.DataFrame()
+
     for player in engine.players:
         agent = player.agent
         agent.save_model()
+
+        # # SAVE EXCEL
+        # data = dict()
+
+        # # -- score
+        # data['model_filename'] = agent.model_filename
+        # data['score'] = score if player.index == 0 else score_2
+        # data['avg_score'] = avg_score if player.index == 0 else avg_score_2
+        # data['epsilon'] = agent.epsilon if player.index == 0 else agent2.epsilon
+
+        # # -- env
+        # data['turn'] = env.turn
+        # data['actions'] = str(env.actions)
+
+        # df = pd.Series(data)
+        # excel_content = pd.concat([excel_content, df.T])
+
+    # excel_content.to_excel(MODEL_EXCEL_FILE)
 
 
 if __name__ == '__main__':

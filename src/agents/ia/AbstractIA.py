@@ -1,10 +1,9 @@
 from agents.Agent import Agent
-from game.actions.ActionList import ActionList
 
 
-class Poutch(Agent):
+class AbstractIA(Agent):
     def choose_action(self, **kwargs):
-        return ActionList.END_TURN
+        return
 
     def create_model(self):
         return
