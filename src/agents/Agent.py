@@ -47,7 +47,7 @@ class Agent:
         epsilon_reset=EPSILON_RESET,
         epsilon_reset_value=EPSILON_RESET_VALUE,
         mem_size=MEM_SIZE,
-        model_filename="model.h5",
+        model_filename='',
     ):
 
         self.is_activated: bool = is_activated  # is the agent auto playing or not
