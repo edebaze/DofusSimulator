@@ -13,9 +13,9 @@ import importlib
 class Trainer:
     CNN_STRUCTURE = [
         {'type': 'CNN', 'size': 64, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'valid'},
-        {'type': 'CNN', 'size': 64, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'same'},
+        {'type': 'CNN', 'size': 64, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'valid'},
         {'type': 'MaxPool', 'pool_size': 2},
-        {'type': 'CNN', 'size': 128, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'same'},
+        {'type': 'CNN', 'size': 128, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'valid'},
         {'type': 'CNN', 'size': 128, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'same'},
         {'type': 'MaxPool', 'pool_size': 2},
     ]
@@ -39,7 +39,7 @@ class Trainer:
             }
         }
 
-        self.batch_size = 64
+        self.batch_size = 128
         self.lr = 3e-4
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
@@ -70,9 +70,9 @@ class Trainer:
         """
             train agent on a specific training module
         :param agent:       agent to train
+        :param module:      module of training
         :param spell:       specific spell to train on
         :param class_name:  name of the class of the Agent
-        :param module:      module of training
         :param n_games:     number of game on the training
         :return:
         """
@@ -87,7 +87,8 @@ class Trainer:
             is_activated=True,
             mem_size=1e6,
             gamma=0.999,
-            epochs=10,
+            epsilon_decay=0.99,
+            epochs=5,
             batch_size=self.batch_size,
             lr=self.lr,
             cnn_model_structure=Trainer.CNN_STRUCTURE,

@@ -27,18 +27,15 @@ import random
 import copy
 
 """
-    TRAINING SCRIPT : train the agent to use a spell against a poutch
+    TRAINING SCRIPT : train the agent with every 
 
     ENV : 
-        - map_size : (7 x 7)
-        - accepted_actions : [END_TURN, CAST_SPELL_(requested_spell), MOVE]
+        - map_size : (11 x 12)
+        - accepted_actions : all
 
     PARAMETERS : 
         - agent : agent to train
         - class_name : Class to train (cf: ClassList)
-        - spell : Spell to train the agent on (cf SpellList)
-        - min_pm : number of pm the player must walk to be in range
-        - max_pm : max pm the player must walk to be in range
 """
 
 NUM_GAMES = 500000
@@ -144,7 +141,7 @@ def create_engine(agent: Agent, class_name: str):
         class_name=ClassList.CRA,
         team=2,
         agent=Poutch(),
-        BASE_HP=150,
+        BASE_HP=100,
         BASE_PA=random.randint(1, 12),
         BASE_PM=random.randint(1, 6),
         BASE_PO=random.randint(1, 6),

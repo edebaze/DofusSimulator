@@ -14,11 +14,12 @@ from game.classes import ClassList
 
 if __name__ == '__main__':
     agent = Agent(
-        is_activated=True,
         mem_size=1e6,
-        gamma=0.999,
-        batch_size=64,
-        lr=3e-4,
+        gamma=0.99,
+        epsilon_decay=0.99,
+        epochs=5,
+        batch_size=1024,
+        lr=1e-4,
         cnn_model_structure=Trainer.CNN_STRUCTURE,
         fc_model_structure=Trainer.FC_MODEL_STRUCTURE,
         output_block_structure=Trainer.OUTPUT_BLOCK_STRUCTURE,
