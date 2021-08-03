@@ -41,9 +41,10 @@ if __name__ == '__main__':
     agent = Agent(
         is_activated=True,
         mem_size=1e6,
-        gamma=0.999,
+        gamma=0.95,
         epsilon_decay=0.99,
-        batch_size=1024,
+        batch_size=4096,
+        epochs=5,
         lr=1e-4,
         cnn_model_structure=CNN_STRUCTURE,
         fc_model_structure=FC_MODEL_STRUCTURE,
