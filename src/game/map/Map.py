@@ -109,7 +109,7 @@ class Map:
 
         for _ in range(len(max_range) * 2 + 1):
             for _ in range(len(max_range) * 2 + 1):
-                box_content = self.box_content(x, y)
+                box_content = self.get_box_content(x, y)
                 if box_content is not None:
                     matrix[y, x, index_is_enemy] = box_content[global_enemy_index]
                     matrix[y, x, index_mask_spell] = box_content[global_mask_spell_index]
@@ -220,7 +220,7 @@ class Map:
                 for _ in range(2 * n_box_row + 1):
                     skip = False
                     # -- block, void or outside the map
-                    box_content = self.box_content(x, y)
+                    box_content = self.get_box_content(x, y)
                     if box_content is None:                         # check is in map
                         skip = True
                     elif box_content[self.item_block_index] == 1:  # check is block
@@ -302,7 +302,7 @@ class Map:
                 for _ in range(2 * n_box_row + 1):
                     skip = False
                     # -- block, void or outside the map
-                    box_content = self.box_content(x, y)
+                    box_content = self.get_box_content(x, y)
                     if box_content is None:  # check is in map
                         skip = True
                     elif box_content[self.item_block_index] == 1:  # check is block
@@ -343,7 +343,7 @@ class Map:
 
 ########################################################################################################################
     # BOX CONTENT
-    def box_content(self, box_x, box_y) -> (None, np.ndarray):
+    def get_box_content(self, box_x, box_y) -> (None, np.ndarray):
         """
             get the content of the box
 
@@ -366,7 +366,7 @@ class Map:
         :param box_y: y coordinates of the box
         :return: True if the box is empty
         """
-        box_content = self.box_content(box_x, box_y)
+        box_content = self.get_box_content(box_x, box_y)
         return box_content is not None and box_content[self.item_empty_index] == 1
 
     # __________________________________________________________________________________________________________________
@@ -465,14 +465,14 @@ class Map:
 
 ########################################################################################################################
     # DEBUG
-    def get_box_content(self, event):
+    def display_box_content(self, event):
         """
             TKINTER debug function : display content of clicked box
         :param event:
         :return:
         """
         x, y = self.get_selected_box(event)
-        content = self.box_content(x, y)
+        content = self.get_box_content(x, y)
         print(f'(x={x}, y={y}) : {content}')
 
     # __________________________________________________________________________________________________________________
