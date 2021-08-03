@@ -20,7 +20,6 @@ class Agent:
 
     MEM_SIZE = 1e6              # size of the memory tables
     GAMMA = 0.99                # percentage of the future reward to add to the current reward in the Q-table
-    GAMMA_N_TRAININGS = 20
 
     EPSILON = 1                 # percentage of chances to take a random action
     EPSILON_DECAY = 0.9         # decrease of epsilon at each predictions
@@ -42,7 +41,6 @@ class Agent:
         lr=LR,
         batch_size=BATCH_SIZE,
         gamma=GAMMA,
-        gamma_n_trainings=GAMMA_N_TRAININGS,
         epsilon=EPSILON,
         epsilon_decay=EPSILON_DECAY,
         epsilon_end=EPSILON_END,
@@ -80,7 +78,6 @@ class Agent:
         self.lr = lr
         self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
         self.loss_fn = tf.keras.losses.MeanSquaredError()
-        self.gamma_n_trainings = gamma_n_trainings      # number of trainings before adding gamma of next reward (to let model learn real rewards)
 
         # Model instantiation
         self.model: (None, Model) = model
@@ -198,10 +195,7 @@ class Agent:
             'input2': next_players_states,
         })
 
-        # -- let model learn real reward before adding future reward
-        gamma = 0 if self.n_trainings < self.gamma_n_trainings else self.gamma
-
-        q_target = rewards + gamma * tf.reduce_max(q_next, axis=1) * terminals
+        q_target = rewards + self.gamma * tf.reduce_max(q_next, axis=1) * terminals
         q_target = tf.tile(q_target[..., tf.newaxis], (1, self.n_actions))
         q_target = tf.where(action_tables, q_target, q_current)
 
