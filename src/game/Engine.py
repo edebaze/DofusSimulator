@@ -2,6 +2,7 @@ from globals import *
 
 from game.spells import Spell, SpellDirectionList
 from agents.config.RewardList import RewardList
+from agents.ia import AbstractIA
 from game.map import Map, MapItemList
 from game.Player import Player
 from game.classes import ClassList
@@ -57,7 +58,7 @@ class Engine(object):
         for player in self.players:
             agent = player.agent
 
-            if agent is None:
+            if agent is None or isinstance(agent, AbstractIA):
                 continue
 
             if len(agent.input_dim) == 0:
@@ -69,7 +70,7 @@ class Engine(object):
                 agent.n_actions = len(self.actions)
 
             if agent.model_filename == '':
-                player.agent.model_filename = os.path.join(self.model_dir, f'player_{player.index + 1}.h5')
+                agent.model_filename = os.path.join(self.model_dir, f'player_{player.index + 1}.h5')
                 make_dir(self.model_dir)
 
             agent.initialize()  # init agent if necessary (model, memory...)
