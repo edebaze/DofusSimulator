@@ -11,27 +11,6 @@ import importlib
 
 
 class Trainer:
-    CNN_STRUCTURE = [
-        {'type': 'CNN', 'size': 64, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'valid'},
-        {'type': 'CNN', 'size': 64, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'valid'},
-        {'type': 'MaxPool', 'pool_size': 2},
-        {'type': 'CNN', 'size': 128, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'valid'},
-        {'type': 'CNN', 'size': 128, 'kernel_size': (2, 2), 'strides': 1, 'padding': 'same'},
-        {'type': 'MaxPool', 'pool_size': 2},
-    ]
-
-    FC_MODEL_STRUCTURE = [
-        {'type': 'FC', 'size': 64},
-        {'type': 'FC', 'size': 32},
-    ]
-
-    OUTPUT_BLOCK_STRUCTURE = [
-        {'type': 'FC', 'size': 256},
-        {'type': 'FC', 'size': 256},
-        {'type': 'FC', 'size': 128},
-        {'type': 'FC', 'size': 128},
-    ]
-
     def __init__(self) -> None:
         self.training_modules: dict = {
             'poutch': {
@@ -39,16 +18,7 @@ class Trainer:
             }
         }
 
-        self.batch_size = 128
-        self.lr = 3e-4
-        self.optimizer = tf.optimizers.Adam(learning_rate=self.lr)
-        self.loss_fn = tf.keras.losses.MeanSquaredError()
-        self.training_data = None
-
-    def train(self, agent: (None, Agent) = None, class_name: str = ''):
-        if agent is None:
-            agent = self.create_agent()
-
+    def train(self, agent: Agent = None, class_name: str = ''):
         class_ = ClassList.get(class_name)
         if class_ is None:
             print('Error : unknown class', class_name)
@@ -78,23 +48,6 @@ class Trainer:
         """
         module = self.load_training_module(module)
         module.train(agent=agent, **kwargs)
-
-    def learning_rate_scheduler(self):
-        return self.lr
-
-    def create_agent(self):
-        return Agent(
-            is_activated=True,
-            mem_size=1e6,
-            gamma=0.999,
-            epsilon_decay=0.99,
-            epochs=5,
-            batch_size=self.batch_size,
-            lr=self.lr,
-            cnn_model_structure=Trainer.CNN_STRUCTURE,
-            fc_model_structure=Trainer.FC_MODEL_STRUCTURE,
-            output_block_structure=Trainer.OUTPUT_BLOCK_STRUCTURE,
-        )
 
     @staticmethod
     def load_training_module(module_path):

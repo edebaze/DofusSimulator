@@ -12,17 +12,42 @@ from agents.Agent import Agent
 from game.classes import ClassList
 
 
+CNN_STRUCTURE = [
+        {'type': 'CNN', 'size': 64, 'kernel_size': (3, 3), 'strides': 1, 'padding': 'same'},
+        {'type': 'CNN', 'size': 64, 'kernel_size': (3, 3), 'strides': 1, 'padding': 'same'},
+        {'type': 'MaxPool', 'pool_size': 2},
+        {'type': 'CNN', 'size': 128, 'kernel_size': (3, 3), 'strides': 1, 'padding': 'same'},
+        {'type': 'CNN', 'size': 128, 'kernel_size': (3, 3), 'strides': 1, 'padding': 'same'},
+        {'type': 'MaxPool', 'pool_size': 2},
+        {'type': 'CNN', 'size': 256, 'kernel_size': (3, 3), 'strides': 1, 'padding': 'same'},
+        {'type': 'CNN', 'size': 256, 'kernel_size': (3, 3), 'strides': 1, 'padding': 'same'},
+        {'type': 'MaxPool', 'pool_size': 2},
+    ]
+
+FC_MODEL_STRUCTURE = [
+    {'type': 'FC', 'size': 64},
+    {'type': 'FC', 'size': 32},
+]
+
+OUTPUT_BLOCK_STRUCTURE = [
+    {'type': 'FC', 'size': 256},
+    {'type': 'FC', 'size': 256},
+    {'type': 'FC', 'size': 128},
+    {'type': 'FC', 'size': 128},
+]
+
+
 if __name__ == '__main__':
     agent = Agent(
+        is_activated=True,
         mem_size=1e6,
-        gamma=0.99,
+        gamma=0.999,
         epsilon_decay=0.99,
-        epochs=5,
         batch_size=1024,
         lr=1e-4,
-        cnn_model_structure=Trainer.CNN_STRUCTURE,
-        fc_model_structure=Trainer.FC_MODEL_STRUCTURE,
-        output_block_structure=Trainer.OUTPUT_BLOCK_STRUCTURE,
+        cnn_model_structure=CNN_STRUCTURE,
+        fc_model_structure=FC_MODEL_STRUCTURE,
+        output_block_structure=OUTPUT_BLOCK_STRUCTURE,
     )
 
     trainer = Trainer()

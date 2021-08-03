@@ -184,6 +184,8 @@ if __name__ == '__main__':
         is_activated=True,
         mem_size=1e6,
         gamma=0.999,
+        epsilon_decay=0.999,
+        batch_size=248,
         cnn_model_structure=CNN_STRUCTURE,
         fc_model_structure=FC_MODEL_STRUCTURE,
         output_block_structure=OUTPUT_BLOCK_STRUCTURE,
