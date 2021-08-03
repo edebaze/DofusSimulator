@@ -38,7 +38,7 @@ OUTPUT_BLOCK_STRUCTURE = [
 if __name__ == '__main__':
     agent = Agent(
         is_activated=True,
-        mem_size=1e5,
+        mem_size=1e6,
         gamma=0.999,
         epsilon_decay=0.99,
         batch_size=32,
