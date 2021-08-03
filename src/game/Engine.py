@@ -230,12 +230,14 @@ class Engine(object):
 
     # __________________________________________________________________________________________________________________
     def is_move_ok(self, player, box_x, box_y, required_pm=1):
-        if box_x >= self.map.BOX_WIDTH or box_y >= self.map.BOX_HEIGHT:
-            player.print('OUTSIDE THE MAP')
-            return False
-
         if player.pm < required_pm:
             player.print('NO PM LEFT')
+            return False
+
+        box_content = self.map.get_box_content(box_x, box_y)
+
+        if box_content is None:
+            player.print('OUTSIDE THE MAP')
             return False
 
         if not self.map.is_empty(box_x, box_y):
@@ -370,7 +372,7 @@ class Engine(object):
 
         # =================================================================================
         # CHECK IS IN MAP
-        box_content = self.map.box_content(box_x, box_y)
+        box_content = self.map.get_box_content(box_x, box_y)
         if box_content is None:
             player.print('OUTSIDE THE MAP')
             self.deselect_spell()
